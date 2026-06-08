@@ -6,7 +6,7 @@ import { Plus, Trash2, RefreshCw, Mail, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { trackingBaseUrl } from "@/lib/tracking";
+import { appBaseUrl } from "@/lib/tracking";
 
 interface SiteDraft {
   name: string;
@@ -29,20 +29,33 @@ export function PublisherForm({ onDone, onCancel }: { onDone: () => void; onCanc
   const [sites, setSites] = useState<SiteDraft[]>([{ name: "", url: "" }]);
   const [busy, setBusy] = useState(false);
   const [emailStatus, setEmailStatus] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const loginUrl = `${trackingBaseUrl().replace(/\/$/, "")}/login`;
+  const loginUrl = `${appBaseUrl()}/login`;
 
   const sendEmail = async () => {
-    if (!email || !password) return;
+    if (!email || !password || !name.trim()) return;
     setEmailStatus("sending");
+    setEmailError(null);
     const res = await fetch("/api/send-credentials", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ to: email, publisherName: name, email, password }),
     });
-    const data = await res.json();
-    setEmailStatus(data.sent ? "sent" : "skipped");
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setEmailStatus("failed");
+      setEmailError(data.error || "Failed to send email");
+      return;
+    }
+    if (data.sent) {
+      setEmailStatus("sent");
+      return;
+    }
+    const msg = data.error || "Email was not sent";
+    setEmailError(msg);
+    setEmailStatus(msg.includes("not configured") ? "skipped" : "failed");
   };
 
   const submit = async () => {
@@ -136,7 +149,7 @@ export function PublisherForm({ onDone, onCancel }: { onDone: () => void; onCanc
             type="button"
             variant="navy"
             onClick={sendEmail}
-            disabled={!password || emailStatus === "sending"}
+            disabled={!password || !name.trim() || emailStatus === "sending"}
             className="w-full"
           >
             {emailStatus === "sent" ? (
@@ -147,12 +160,21 @@ export function PublisherForm({ onDone, onCancel }: { onDone: () => void; onCanc
               <>
                 <Mail size={15} /> Email not configured (skipped)
               </>
+            ) : emailStatus === "failed" ? (
+              <>
+                <Mail size={15} /> Send failed — try again
+              </>
             ) : (
               <>
                 <Mail size={15} /> Send Credentials via Email
               </>
             )}
           </Button>
+          {emailError && emailStatus !== "sent" && (
+            <div className="rounded-lg border border-[#FCA5A5] bg-[#FEF2F2] px-3 py-2 text-sm text-[#DC2626]">
+              {emailError}
+            </div>
+          )}
           <div className="flex justify-between gap-2 pt-2">
             <Button variant="ghost" onClick={() => setStep(1)}>
               ← Back

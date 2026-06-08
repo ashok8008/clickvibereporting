@@ -56,6 +56,7 @@ Open <http://localhost:3000>.
 | `DATABASE_URL` | MongoDB connection string |
 | `NEXTAUTH_SECRET` | Session signing secret (required) |
 | `NEXTAUTH_URL` | App base URL (`http://localhost:3000` locally) |
+| `NEXT_PUBLIC_APP_URL` | Dashboard URL in credential emails (`https://app.clickvibe.ai` in prod) |
 | `NEXT_PUBLIC_TRACKING_BASE_URL` | Base URL used to build `/c/{linkId}` redirect links |
 | `RESEND_API_KEY` | Resend key (leave blank — email sending becomes a no-op) |
 | `APPSFLYER_API_TOKEN` | AppsFlyer Pull API V2 token (**never commit**) |
