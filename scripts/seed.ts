@@ -57,12 +57,12 @@ async function main() {
 
   // 1. Admin
   const admin = await User.create({
-    email: "admin@trackcenter.info",
-    password: await bcrypt.hash("Admin123!", 10),
+    email: "admin@clickvibe.ai",
+    password: await bcrypt.hash("June@123", 10),
     role: Role.ADMIN,
     name: "ClickVibe Admin",
   });
-  console.log("Admin:", admin.email, "/ Admin123!");
+  console.log("Admin:", admin.email);
 
   // 2. Polymarket offer
   const offer = await Offer.create({
@@ -78,13 +78,13 @@ async function main() {
 
   // 3. Publisher TFM Media + user
   const pubUser = await User.create({
-    email: "tfm@trackcenter.info",
-    password: await bcrypt.hash("Pub123!", 10),
+    email: "chintan@origami.dev",
+    password: await bcrypt.hash("Origami@1", 10),
     role: Role.PUBLISHER,
     name: "TFM Media",
   });
   const publisher = await Publisher.create({ name: "TFM Media", userId: pubUser._id });
-  console.log("Publisher:", publisher.name, "(", pubUser.email, "/ Pub123! )");
+  console.log("Publisher:", publisher.name, "(", pubUser.email, ")");
 
   // 4. Sites with assigned colors
   const sites = [];

@@ -81,12 +81,6 @@ export default function LoginPage() {
               {isSubmitting ? "Signing in…" : "Sign in"}
             </Button>
           </form>
-
-          <div className="mt-6 rounded-lg bg-[#F8F9FF] px-4 py-3 text-xs text-[#6B7280]">
-            <p className="font-semibold text-navy">Demo credentials</p>
-            <p className="mt-1">Admin — admin@trackcenter.info / Admin123!</p>
-            <p>Publisher — tfm@trackcenter.info / Pub123!</p>
-          </div>
         </div>
       </div>
     </div>

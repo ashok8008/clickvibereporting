@@ -46,8 +46,8 @@ Open <http://localhost:3000>.
 
 | Role      | Email                    | Password   |
 | --------- | ------------------------ | ---------- |
-| Admin     | admin@trackcenter.info   | `Admin123!` |
-| Publisher | tfm@trackcenter.info     | `Pub123!`   |
+| Admin     | admin@clickvibe.ai       | `June@123`  |
+| Publisher | chintan@origami.dev      | `Origami@1` |
 
 ## Environment Variables
 
