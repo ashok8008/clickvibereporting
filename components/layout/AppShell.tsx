@@ -7,7 +7,6 @@ import { signOut } from "next-auth/react";
 import { LogOut, Menu } from "lucide-react";
 import { Logo } from "./Logo";
 import { navForRole } from "./nav-config";
-import { Chatbot } from "@/components/shared/Chatbot";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -122,7 +121,6 @@ export function AppShell({ role, userName, userEmail, title, children }: AppShel
         <div className="flex flex-1 flex-col gap-6 p-4 md:p-8">{children}</div>
       </div>
 
-      <Chatbot />
     </div>
   );
 }

@@ -22,6 +22,12 @@ export async function requireAdmin() {
   return session;
 }
 
+export async function requirePublisher() {
+  const session = await getSessionOrThrow();
+  if (session.user.role !== "PUBLISHER") throw new ApiError(403, "Forbidden");
+  return session;
+}
+
 export function handleApiError(err: unknown) {
   if (err instanceof ApiError) {
     return NextResponse.json({ error: err.message }, { status: err.status });

@@ -1,4 +1,4 @@
-import { Home, BarChart3, Tag, Users, Upload, RefreshCw } from "lucide-react";
+import { Home, BarChart3, Tag, Users, Upload, RefreshCw, Settings } from "lucide-react";
 import type { ReactNode } from "react";
 
 export interface NavItem {
@@ -21,5 +21,6 @@ export function navForRole(role: string): NavItem[] {
   return [
     { label: "Home", href: "/publisher", icon: <Home size={18} /> },
     { label: "Reporting", href: "/publisher/reporting", icon: <BarChart3 size={18} /> },
+    { label: "Settings", href: "/publisher/settings", icon: <Settings size={18} /> },
   ];
 }

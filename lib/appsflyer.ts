@@ -1,19 +1,32 @@
 import { dbConnect } from "./db";
 import { Offer, Conversion, AppsflyerSync, MediaSite, ConversionSource } from "@/models";
 
-interface SyncResult {
+export interface SyncResult {
   offerId: string;
   offerName: string;
   status: "success" | "error";
   recordCount: number;
   error?: string;
+  skipped?: boolean;
+  reason?: string;
 }
 
-function yesterdayRange(): { from: string; to: string } {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - 1);
-  const day = d.toISOString().slice(0, 10);
-  return { from: day, to: day };
+export function yesterdayRange(): {
+  from: string;
+  to: string;
+  startOfYesterday: Date;
+  endOfYesterday: Date;
+} {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const date = yesterday.toISOString().split("T")[0];
+
+  const startOfYesterday = new Date(yesterday);
+  startOfYesterday.setHours(0, 0, 0, 0);
+  const endOfYesterday = new Date(yesterday);
+  endOfYesterday.setHours(23, 59, 59, 999);
+
+  return { from: date, to: date, startOfYesterday, endOfYesterday };
 }
 
 /**
@@ -28,7 +41,23 @@ async function syncOffer(offer: {
   appsflyerAppId: string;
 }): Promise<SyncResult> {
   const token = process.env.APPSFLYER_API_TOKEN;
-  const { from, to } = yesterdayRange();
+  const { from, to, startOfYesterday, endOfYesterday } = yesterdayRange();
+
+  const existing = await AppsflyerSync.findOne({
+    offerId: offer._id,
+    status: "success",
+    syncedAt: { $gte: startOfYesterday, $lte: endOfYesterday },
+  });
+  if (existing) {
+    return {
+      offerId: String(offer._id),
+      offerName: offer.name,
+      status: "success",
+      recordCount: existing.recordCount,
+      skipped: true,
+      reason: "already synced",
+    };
+  }
 
   try {
     if (!token) {

@@ -13,9 +13,17 @@ export function SyncNowButton() {
     setBusy(true);
     try {
       const res = await fetch("/api/appsflyer/sync", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        alert(err.error || "Sync failed");
+        alert(data.error || "Sync failed");
+        return;
+      }
+      const skipped = (data.results ?? []).filter((r: { skipped?: boolean }) => r.skipped).length;
+      const synced = (data.results ?? []).filter(
+        (r: { skipped?: boolean; status: string }) => !r.skipped && r.status === "success"
+      ).length;
+      if (skipped > 0 && synced === 0) {
+        alert("Already synced for yesterday — no API calls made.");
       }
       router.refresh();
     } finally {
