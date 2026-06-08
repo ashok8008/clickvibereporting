@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clickvibe – Home</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html { overflow-x:hidden; }
+body {
+  font-family:'Segoe UI', Arial, sans-serif;
+  background:#F0F2FA; color:#1a1a2e;
+  display:flex; overflow-x:hidden;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width:220px; flex-shrink:0; background:#0D1B4B;
+  display:flex; flex-direction:column;
+  position:fixed; top:0; left:0; bottom:0; z-index:100;
+}
+.logo-area { padding:28px 20px 24px; border-bottom:1px solid rgba(255,255,255,0.08); }
+.logo-wrap  { display:flex; align-items:center; gap:10px; }
+.logo-text  { font-size:22px; font-weight:800; color:#fff; letter-spacing:-0.5px; }
+nav { padding:20px 12px; flex:1; }
+.nav-item {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 14px; border-radius:10px;
+  cursor:pointer; color:rgba(255,255,255,0.55);
+  font-size:14px; font-weight:500; margin-bottom:4px;
+  transition:all 0.15s; text-decoration:none;
+}
+.nav-item:hover { background:rgba(255,255,255,0.07); color:#fff; }
+.nav-item.active { background:rgba(99,102,241,0.25); color:#fff; border-left:3px solid #6366F1; }
+.nav-item svg { width:18px; height:18px; flex-shrink:0; }
+.sidebar-footer { padding:20px; border-top:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.35); font-size:11px; }
+
+/* ── Main ── */
+.main {
+  margin-left:220px;
+  width:calc(100vw - 220px);
+  min-height:100vh;
+  display:flex; flex-direction:column;
+  overflow-x:hidden;
+}
+
+.topbar {
+  background:#fff; border-bottom:1px solid #E8EAEF;
+  padding:16px 32px; display:flex; align-items:center; justify-content:space-between;
+  flex-shrink:0;
+}
+.topbar-right { display:flex; align-items:center; gap:10px; font-size:13px; color:#666; }
+.badge {
+  background:#6366F1; color:#fff; border-radius:50%;
+  width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:700;
+}
+.greeting { font-size:14px; color:#0D1B4B; font-weight:600; }
+.topbar-date { font-size:12px; color:#9CA3AF; }
+
+.content { padding:28px 32px; display:flex; flex-direction:column; gap:24px; }
+
+/* ── Hero ── */
+.hero {
+  background:linear-gradient(120deg, #0D1B4B 0%, #1e3a8a 60%, #312e81 100%);
+  border-radius:20px; padding:40px 44px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:relative; overflow:hidden;
+}
+.hero::before {
+  content:'';
+  position:absolute; top:-60px; right:-60px;
+  width:300px; height:300px; border-radius:50%;
+  background:radial-gradient(circle, rgba(99,102,241,0.3) 0%, transparent 70%);
+}
+.hero::after {
+  content:'';
+  position:absolute; bottom:-80px; left:30%;
+  width:200px; height:200px; border-radius:50%;
+  background:radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%);
+}
+.hero-left { position:relative; z-index:1; }
+.hero-eyebrow {
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;
+  color:#6366F1; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3);
+  padding:4px 12px; border-radius:20px; display:inline-block; margin-bottom:14px;
+}
+.hero-title {
+  font-size:34px; font-weight:900; color:#fff; line-height:1.15; margin-bottom:10px;
+  letter-spacing:-0.5px;
+}
+.hero-title span { color:#22C55E; }
+.hero-sub { font-size:14px; color:rgba(255,255,255,0.65); line-height:1.6; max-width:480px; margin-bottom:22px; }
+.hero-btns { display:flex; gap:10px; flex-wrap:wrap; }
+.hero-btn {
+  padding:11px 22px; border-radius:10px; font-size:13px; font-weight:700;
+  cursor:pointer; transition:all 0.15s; text-decoration:none; font-family:inherit; border:none;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.hero-btn-primary { background:#6366F1; color:#fff; }
+.hero-btn-primary:hover { background:#4F46E5; }
+.hero-btn-outline { background:rgba(255,255,255,0.1); color:#fff; border:1.5px solid rgba(255,255,255,0.2); }
+.hero-btn-outline:hover { background:rgba(255,255,255,0.18); }
+
+.hero-right { position:relative; z-index:1; display:flex; flex-direction:column; gap:10px; flex-shrink:0; }
+.hero-stat-card {
+  background:rgba(255,255,255,0.08); backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.12); border-radius:12px;
+  padding:14px 18px; min-width:160px;
+}
+.hero-stat-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:rgba(255,255,255,0.5); margin-bottom:4px; }
+.hero-stat-value { font-size:22px; font-weight:900; color:#fff; }
+.hero-stat-delta { font-size:11px; font-weight:600; color:#22C55E; margin-top:2px; }
+
+/* ── Quick nav cards ── */
+.quick-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.quick-card {
+  background:#fff; border-radius:14px; border:1px solid #E8EAEF;
+  padding:20px 22px; display:flex; align-items:center; gap:16px;
+  cursor:pointer; text-decoration:none; transition:box-shadow 0.2s, transform 0.15s;
+}
+.quick-card:hover { box-shadow:0 6px 24px rgba(13,27,75,0.10); transform:translateY(-2px); }
+.quick-icon {
+  width:44px; height:44px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:20px;
+}
+.quick-text h3 { font-size:14px; font-weight:800; color:#0D1B4B; margin-bottom:3px; }
+.quick-text p  { font-size:12px; color:#9CA3AF; line-height:1.4; }
+.quick-arrow { margin-left:auto; color:#D1D5DB; font-size:18px; flex-shrink:0; }
+
+/* ── Two-col layout ── */
+.two-col { display:grid; grid-template-columns:1fr 340px; gap:20px; }
+
+/* ── News section ── */
+.news-card { background:#fff; border-radius:14px; border:1px solid #E8EAEF; overflow:hidden; }
+.news-card-header {
+  padding:16px 20px; border-bottom:1px solid #E8EAEF;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.news-card-title { font-size:15px; font-weight:800; color:#0D1B4B; }
+.news-tabs { display:flex; gap:6px; }
+.news-tab {
+  padding:5px 14px; border-radius:20px; font-size:12px; font-weight:600;
+  border:1.5px solid #E8EAEF; background:#fff; color:#6B7280;
+  cursor:pointer; transition:all 0.15s; font-family:inherit;
+}
+.news-tab.active { background:#0D1B4B; color:#fff; border-color:#0D1B4B; }
+
+.news-item {
+  padding:16px 20px; border-bottom:1px solid #F3F4F6;
+  display:flex; align-items:flex-start; gap:14px;
+  cursor:pointer; transition:background 0.1s;
+}
+.news-item:last-child { border-bottom:none; }
+.news-item:hover { background:#F8F9FF; }
+.news-num { font-size:18px; font-weight:900; color:#E5E7EB; width:22px; flex-shrink:0; line-height:1.3; }
+.news-num.hot { color:#EF4444; }
+.news-body { flex:1; min-width:0; }
+.news-headline { font-size:13px; font-weight:700; color:#0D1B4B; line-height:1.4; margin-bottom:6px; }
+.news-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.news-pill {
+  padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700;
+  text-transform:uppercase; letter-spacing:0.3px;
+}
+.pill-pred { background:rgba(99,102,241,0.1); color:#4F46E5; }
+.pill-sport { background:rgba(239,68,68,0.1); color:#DC2626; }
+.pill-crypto { background:rgba(245,158,11,0.1); color:#D97706; }
+.pill-reg { background:rgba(139,92,246,0.1); color:#7C3AED; }
+.news-source { font-size:11px; color:#9CA3AF; font-weight:500; }
+.news-time   { font-size:11px; color:#9CA3AF; }
+.news-trend  { font-size:11px; font-weight:700; color:#22C55E; margin-left:auto; flex-shrink:0; }
+
+/* ── Right col ── */
+.right-col { display:flex; flex-direction:column; gap:16px; }
+
+/* ── Performance snapshot ── */
+.perf-card { background:#fff; border-radius:14px; border:1px solid #E8EAEF; padding:20px; }
+.perf-title { font-size:14px; font-weight:800; color:#0D1B4B; margin-bottom:16px; }
+.perf-list  { display:flex; flex-direction:column; gap:12px; }
+.perf-row   { display:flex; align-items:center; justify-content:space-between; }
+.perf-label { font-size:13px; color:#6B7280; font-weight:500; }
+.perf-val   { font-size:14px; font-weight:800; color:#0D1B4B; }
+.perf-delta { font-size:11px; font-weight:700; }
+.up   { color:#22C55E; }
+.down { color:#EF4444; }
+.perf-divider { height:1px; background:#F3F4F6; }
+.view-report-btn {
+  width:100%; margin-top:14px; padding:10px; border-radius:8px;
+  border:1.5px solid #6366F1; background:#fff; color:#6366F1;
+  font-size:13px; font-weight:700; cursor:pointer; font-family:inherit;
+  transition:all 0.15s;
+}
+.view-report-btn:hover { background:#6366F1; color:#fff; }
+
+/* ── Top offers widget ── */
+.offers-widget { background:#fff; border-radius:14px; border:1px solid #E8EAEF; overflow:hidden; }
+.offers-widget-hdr { padding:14px 18px; border-bottom:1px solid #E8EAEF; display:flex; align-items:center; justify-content:space-between; }
+.offers-widget-title { font-size:14px; font-weight:800; color:#0D1B4B; }
+.offer-row {
+  display:flex; align-items:center; gap:12px; padding:12px 18px;
+  border-bottom:1px solid #F3F4F6; cursor:pointer; transition:background 0.1s;
+}
+.offer-row:last-child { border-bottom:none; }
+.offer-row:hover { background:#F8F9FF; }
+.offer-dot { width:32px; height:32px; border-radius:8px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:900; color:#fff; }
+.offer-info { flex:1; min-width:0; }
+.offer-name { font-size:13px; font-weight:700; color:#0D1B4B; }
+.offer-sub  { font-size:11px; color:#9CA3AF; }
+.offer-payout { font-size:13px; font-weight:800; color:#22C55E; flex-shrink:0; }
+
+/* ── Chatbot ── */
+.chatbot-toggle {
+  position:fixed; bottom:28px; right:28px; z-index:200;
+  width:54px; height:54px; border-radius:50%;
+  background:linear-gradient(135deg,#6366F1,#4F46E5);
+  border:none; cursor:pointer; box-shadow:0 4px 20px rgba(99,102,241,0.45);
+  display:flex; align-items:center; justify-content:center;
+  transition:transform 0.2s, box-shadow 0.2s;
+  font-size:22px;
+}
+.chatbot-toggle:hover { transform:scale(1.08); box-shadow:0 6px 28px rgba(99,102,241,0.55); }
+.chatbot-notif {
+  position:absolute; top:-4px; right:-4px; width:18px; height:18px;
+  background:#EF4444; border-radius:50%; border:2px solid #fff;
+  font-size:10px; font-weight:800; color:#fff;
+  display:flex; align-items:center; justify-content:center;
+}
+
+.chatbot-window {
+  position:fixed; bottom:94px; right:28px; z-index:200;
+  width:340px; height:480px;
+  background:#fff; border-radius:18px;
+  box-shadow:0 16px 60px rgba(13,27,75,0.20);
+  display:none; flex-direction:column; overflow:hidden;
+  border:1px solid #E8EAEF;
+}
+.chatbot-window.open { display:flex; }
+
+.chatbot-header {
+  background:linear-gradient(135deg,#0D1B4B,#1e3a8a);
+  padding:14px 18px; display:flex; align-items:center; gap:10px;
+}
+.bot-avatar {
+  width:36px; height:36px; border-radius:50%;
+  background:linear-gradient(135deg,#6366F1,#22C55E);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; flex-shrink:0;
+}
+.bot-info h4 { font-size:14px; font-weight:800; color:#fff; }
+.bot-info p  { font-size:11px; color:rgba(255,255,255,0.6); }
+.bot-status  { display:flex; align-items:center; gap:4px; }
+.bot-status::before {
+  content:''; width:7px; height:7px; border-radius:50%; background:#22C55E; display:block;
+}
+.chatbot-close {
+  margin-left:auto; background:none; border:none; color:rgba(255,255,255,0.6);
+  font-size:18px; cursor:pointer; padding:0 2px; line-height:1;
+}
+
+.chatbot-messages {
+  flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px;
+  background:#F8F9FF;
+}
+.chatbot-messages::-webkit-scrollbar { width:4px; }
+.chatbot-messages::-webkit-scrollbar-thumb { background:#D1D5DB; border-radius:2px; }
+
+.msg { display:flex; flex-direction:column; gap:3px; max-width:85%; }
+.msg.bot  { align-self:flex-start; }
+.msg.user { align-self:flex-end; }
+.msg-bubble {
+  padding:10px 13px; border-radius:14px; font-size:13px; line-height:1.5;
+}
+.msg.bot  .msg-bubble { background:#fff; color:#1F2937; border:1px solid #E8EAEF; border-radius:4px 14px 14px 14px; }
+.msg.user .msg-bubble { background:#6366F1; color:#fff; border-radius:14px 4px 14px 14px; }
+.msg-time { font-size:10px; color:#9CA3AF; padding:0 4px; }
+.msg.user .msg-time { text-align:right; }
+
+.quick-replies { display:flex; flex-wrap:wrap; gap:6px; padding:0 16px 12px; }
+.qr-btn {
+  padding:6px 12px; border-radius:20px; font-size:12px; font-weight:600;
+  border:1.5px solid #6366F1; background:#fff; color:#6366F1;
+  cursor:pointer; transition:all 0.15s; font-family:inherit;
+}
+.qr-btn:hover { background:#6366F1; color:#fff; }
+
+.chatbot-input-row {
+  padding:12px 14px; border-top:1px solid #E8EAEF;
+  display:flex; gap:8px; background:#fff; align-items:center;
+}
+.chatbot-input {
+  flex:1; padding:9px 13px; border-radius:22px;
+  border:1.5px solid #E8EAEF; font-size:13px; font-family:inherit;
+  outline:none; background:#F8F9FF; color:#1F2937;
+}
+.chatbot-input:focus { border-color:#6366F1; background:#fff; }
+.chatbot-send {
+  width:36px; height:36px; border-radius:50%; border:none;
+  background:#6366F1; color:#fff; font-size:16px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:background 0.15s; flex-shrink:0;
+}
+.chatbot-send:hover { background:#4F46E5; }
+
+/* ── typing indicator ── */
+.typing { display:flex; align-items:center; gap:4px; padding:10px 13px; }
+.typing span {
+  width:7px; height:7px; border-radius:50%; background:#9CA3AF; display:block;
+  animation:bounce 1.2s infinite;
+}
+.typing span:nth-child(2){ animation-delay:0.2s; }
+.typing span:nth-child(3){ animation-delay:0.4s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0);} 30%{transform:translateY(-6px);} }
+
+/* ── Hamburger (mobile only) ── */
+.hamburger {
+  display:none; background:none; border:none; cursor:pointer;
+  flex-direction:column; gap:5px; padding:4px; flex-shrink:0;
+}
+.hamburger span { display:block; width:22px; height:2px; background:#0D1B4B; border-radius:2px; }
+
+/* ── Sidebar overlay ── */
+.sidebar-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.45); z-index:99;
+}
+.sidebar-overlay.active { display:block; }
+
+/* ══ MOBILE ══ */
+@media (max-width: 768px) {
+  .hamburger { display:flex; }
+
+  .sidebar {
+    transform:translateX(-220px);
+    transition:transform 0.28s ease;
+    z-index:200;
+  }
+  .sidebar.mobile-open { transform:translateX(0); }
+
+  .main { margin-left:0; width:100vw; }
+
+  .topbar { padding:14px 16px; gap:10px; }
+  .topbar-right span { display:none; }
+
+  /* Hero */
+  .hero { flex-direction:column; padding:24px 20px; gap:20px; }
+  .hero-title { font-size:26px; }
+  .hero-sub   { font-size:13px; }
+  .hero-right { flex-direction:row; flex-wrap:wrap; gap:8px; width:100%; }
+  .hero-stat-card { min-width:calc(50% - 4px); flex:1; padding:12px 14px; }
+  .hero-stat-value { font-size:18px; }
+
+  /* Quick grid */
+  .quick-grid { grid-template-columns:1fr; }
+
+  /* Two col */
+  .two-col { grid-template-columns:1fr; }
+
+  /* News */
+  .news-card-header { flex-direction:column; align-items:flex-start; gap:10px; }
+  .news-tabs { flex-wrap:wrap; }
+  .news-trend { display:none; }
+  .news-item { padding:12px 14px; }
+
+  /* Perf / offers widget */
+  .perf-card, .offers-widget { width:100%; }
+
+  /* Content padding */
+  .content { padding:16px; gap:16px; }
+
+  /* Chatbot */
+  .chatbot-window { width:calc(100vw - 32px); right:16px; bottom:86px; height:420px; }
+  .chatbot-toggle { right:16px; bottom:16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="logo-area">
+    <div class="logo-wrap">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <polygon points="8,28 18,18 15,18 15,11 21,11 21,18 18,18" fill="#22C55E"/>
+        <circle cx="24" cy="8"  r="2.5" fill="#6366F1"/>
+        <circle cx="29" cy="11" r="2.5" fill="#6366F1"/>
+        <circle cx="31" cy="17" r="2.5" fill="#6366F1"/>
+        <circle cx="29" cy="23" r="2.5" fill="#6366F1" opacity="0.5"/>
+        <circle cx="24" cy="26" r="2.5" fill="#6366F1" opacity="0.3"/>
+      </svg>
+      <span class="logo-text">clickvibe</span>
+    </div>
+  </div>
+  <nav>
+    <a class="nav-item active" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>Home
+    </a>
+    <a class="nav-item" href="clickvibe-reporting.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      </svg>Reporting
+    </a>
+    <a class="nav-item" href="clickvibe-offers.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+        <line x1="7" y1="7" x2="7.01" y2="7"/>
+      </svg>Offers
+    </a>
+    <a class="nav-item" href="clickvibe-trending.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+        <polyline points="17 6 23 6 23 12"/>
+      </svg>Trending News
+    </a>
+  </nav>
+  <div class="sidebar-footer">© 2026 Clickvibe</div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+
+  <div class="topbar">
+    <button class="hamburger" onclick="openSidebar()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div>
+      <div class="greeting" id="greeting">Good morning, Alex 👋</div>
+      <div class="topbar-date" id="topbar-date"></div>
+    </div>
+    <div class="topbar-right">
+      <span style="font-size:13px;color:#6B7280;">alexhajarha@gmail.com</span>
+      <div class="badge">A</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-left">
+        <div class="hero-eyebrow">Affiliate Intelligence Platform</div>
+        <div class="hero-title">Welcome to<br><span>Clickvibe</span></div>
+        <div class="hero-sub">Your central hub for affiliate reporting, partner offers, and real-time trending news across prediction markets and sports betting verticals.</div>
+      </div>
+      <div class="hero-right">
+        <div class="hero-stat-card">
+          <div class="hero-stat-label">Total Revenue (MTD)</div>
+          <div class="hero-stat-value">$6,240</div>
+          <div class="hero-stat-delta">↑ 18% vs last month</div>
+        </div>
+        <div class="hero-stat-card">
+          <div class="hero-stat-label">Active Partner Offers</div>
+          <div class="hero-stat-value">6 Platforms</div>
+          <div class="hero-stat-delta">↑ 2 added this month</div>
+        </div>
+        <div class="hero-stat-card">
+          <div class="hero-stat-label">Conversion Rate</div>
+          <div class="hero-stat-value">16.8%</div>
+          <div class="hero-stat-delta">↑ 3.2pts vs prior period</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Two-col: News + Right panel -->
+    <div class="two-col">
+
+      <!-- News feed -->
+      <div class="news-card">
+        <div class="news-card-header">
+          <div class="news-card-title">📰 Today's Top Headlines</div>
+          <div class="news-tabs">
+            <button class="news-tab active" onclick="switchTab('all',this)">All</button>
+            <button class="news-tab" onclick="switchTab('prediction',this)">Prediction</button>
+            <button class="news-tab" onclick="switchTab('sports',this)">Sports Betting</button>
+          </div>
+        </div>
+        <div id="news-feed"></div>
+      </div>
+
+      <!-- Right col -->
+      <div class="right-col">
+
+        <!-- Performance snapshot -->
+        <div class="perf-card">
+          <div class="perf-title">📈 Performance Snapshot</div>
+          <div class="perf-list">
+            <div class="perf-row">
+              <span class="perf-label">Total Clicks (MTD)</span>
+              <span class="perf-val">463 <span class="up perf-delta">↑12%</span></span>
+            </div>
+            <div class="perf-divider"></div>
+            <div class="perf-row">
+              <span class="perf-label">Conversions (MTD)</span>
+              <span class="perf-val">78 <span class="up perf-delta">↑8%</span></span>
+            </div>
+            <div class="perf-divider"></div>
+            <div class="perf-row">
+              <span class="perf-label">Top Site</span>
+              <span class="perf-val" style="font-size:13px;">PopCulture</span>
+            </div>
+            <div class="perf-divider"></div>
+            <div class="perf-row">
+              <span class="perf-label">Top Offer</span>
+              <span class="perf-val" style="font-size:13px;">PolyMarket</span>
+            </div>
+            <div class="perf-divider"></div>
+            <div class="perf-row">
+              <span class="perf-label">Revenue (MTD)</span>
+              <span class="perf-val">$6,240 <span class="up perf-delta">↑18%</span></span>
+            </div>
+          </div>
+          <button class="view-report-btn" onclick="location.href='clickvibe-reporting.html'">View Full Report →</button>
+        </div>
+
+        <!-- Top offers -->
+        <div class="offers-widget">
+          <div class="offers-widget-hdr">
+            <div class="offers-widget-title">🏷️ Featured Offers</div>
+            <a href="clickvibe-offers.html" style="font-size:12px;color:#6366F1;font-weight:600;text-decoration:none;">See all →</a>
+          </div>
+          <div class="offer-row">
+            <div class="offer-dot" style="background:linear-gradient(135deg,#6366F1,#4F46E5);">PM</div>
+            <div class="offer-info">
+              <div class="offer-name">PolyMarket</div>
+              <div class="offer-sub">FTD of $20 · iOS · US</div>
+            </div>
+            <div class="offer-payout">$80</div>
+          </div>
+          <div class="offer-row">
+            <div class="offer-dot" style="background:linear-gradient(135deg,#10B981,#059669);">K</div>
+            <div class="offer-info">
+              <div class="offer-name">Kalshi</div>
+              <div class="offer-sub">100 trades in 30 days · All 50 states</div>
+            </div>
+            <div class="offer-payout">$25</div>
+          </div>
+          <div class="offer-row">
+            <div class="offer-dot" style="background:linear-gradient(135deg,#EF4444,#DC2626);">F</div>
+            <div class="offer-info">
+              <div class="offer-name">Fanatics</div>
+              <div class="offer-sub">FTD · App only · 22 states</div>
+            </div>
+            <div class="offer-payout" style="color:#F59E0B;font-size:12px;">Neg.</div>
+          </div>
+          <div class="offer-row">
+            <div class="offer-dot" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);">N</div>
+            <div class="offer-info">
+              <div class="offer-name">Novig</div>
+              <div class="offer-sub">Sign up + wagering · 42 states</div>
+            </div>
+            <div class="offer-payout" style="font-size:12px;color:#8B5CF6;">25 Cash</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ CHATBOT ══ -->
+<button class="chatbot-toggle" onclick="toggleChat()" id="chat-toggle">
+  💬
+  <div class="chatbot-notif">1</div>
+</button>
+
+<div class="chatbot-window" id="chatbot-window">
+  <div class="chatbot-header">
+    <div class="bot-avatar">⚡</div>
+    <div class="bot-info">
+      <h4>Vibe Assistant</h4>
+      <p class="bot-status">Online · Clickvibe AI</p>
+    </div>
+    <button class="chatbot-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div class="chatbot-messages" id="chat-messages">
+    <div class="msg bot">
+      <div class="msg-bubble">👋 Hey Alex! I'm your Vibe Assistant. I can help you navigate the platform, find top offers, or pull up performance data. What do you need?</div>
+      <div class="msg-time">Just now</div>
+    </div>
+  </div>
+  <div class="quick-replies" id="quick-replies">
+    <button class="qr-btn" onclick="sendQuick('What are today\'s top stories?')">Top stories today</button>
+    <button class="qr-btn" onclick="sendQuick('Show me the best affiliate offer')">Best offer</button>
+    <button class="qr-btn" onclick="sendQuick('How is my performance this month?')">My performance</button>
+  </div>
+  <div class="chatbot-input-row">
+    <input class="chatbot-input" id="chat-input" placeholder="Ask anything…" onkeydown="if(event.key==='Enter') sendMsg()">
+    <button class="chatbot-send" onclick="sendMsg()">➤</button>
+  </div>
+</div>
+
+<script>
+// ── Sidebar toggle ──
+function openSidebar() {
+  document.querySelector('.sidebar').classList.add('mobile-open');
+  document.getElementById('sidebar-overlay').classList.add('active');
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebar-overlay').classList.remove('active');
+}
+
+// ── Greeting ──
+(function() {
+  const h = new Date().getHours();
+  const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('greeting').textContent = g + ', Alex 👋';
+  const d = new Date();
+  document.getElementById('topbar-date').textContent =
+    d.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+})();
+
+// ── News data ──
+const newsData = [
+  { cat:'prediction', pill:'pill-pred', label:'Prediction Markets', headline:'Polymarket Hits $10B Monthly Volume — A First in Prediction Market History', source:'BitKE', time:'2h ago', trend:'↑ 312%', hot:true },
+  { cat:'sports',     pill:'pill-sport', label:'Sports Betting',    headline:'World Cup Handle Projected to Top $4B — Senate Hearing Warns on Safeguards', source:'iGaming Business', time:'4h ago', trend:'↑ 89%', hot:true },
+  { cat:'prediction', pill:'pill-pred',  label:'Prediction Markets', headline:'Kalshi Locks In $22B Valuation, Edges Ahead of Polymarket as Global #1', source:'Fortune', time:'5h ago', trend:'↑ 44%', hot:false },
+  { cat:'sports',     pill:'pill-sport', label:'Sports Betting',    headline:'Robinhood Acquiring LedgerX to Reduce Reliance on Kalshi for Prediction Market Bets', source:'Sportico', time:'6h ago', trend:'↑ 67%', hot:false },
+  { cat:'prediction', pill:'pill-reg',   label:'Regulation',        headline:'Spain Blocks Polymarket and Kalshi Over Unlicensed Gambling Investigation', source:'Slashdot', time:'8h ago', trend:'↑ 98%', hot:true },
+  { cat:'sports',     pill:'pill-sport', label:'Sports Betting',    headline:'Fanatics Sportsbook Live in 22 States — CEO Eyes 40% Revenue from Betting by 2027', source:'Forbes', time:'10h ago', trend:'↑ 55%', hot:false },
+  { cat:'prediction', pill:'pill-pred',  label:'Prediction Markets', headline:'Novig Raises $75M at $500M Valuation, Files for Federal CFTC Licence', source:'PR Newswire', time:'12h ago', trend:'↑ 38%', hot:false },
+  { cat:'sports',     pill:'pill-sport', label:'Sports Betting',    headline:'NBA Insider Trading Scandal: Ex-Coach Pleads Guilty to Leaking Injury Data to Bettors', source:'Reuters', time:'14h ago', trend:'↑ 121%', hot:true },
+  { cat:'prediction', pill:'pill-pred',  label:'Prediction Markets', headline:'Betr Partners with Polymarket to Launch Prediction Markets as 5th App Vertical', source:'Complex', time:'18h ago', trend:'↑ 211%', hot:false },
+  { cat:'sports',     pill:'pill-crypto', label:'Crypto',           headline:'Bitcoin $120K: Prediction Market Contracts Surge 400% as Traders Pile In', source:'CoinDesk', time:'22h ago', trend:'↑ 528%', hot:true },
+];
+
+let activeTab = 'all';
+
+function switchTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('.news-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderNews();
+}
+
+function renderNews() {
+  const data = activeTab === 'all' ? newsData : newsData.filter(n => n.cat === activeTab);
+  const feed = document.getElementById('news-feed');
+  if (!data.length) { feed.innerHTML = '<div style="padding:24px;text-align:center;color:#9CA3AF;font-size:13px;">No stories for this filter.</div>'; return; }
+  feed.innerHTML = data.map((n,i) => `
+    <div class="news-item">
+      <div class="news-num ${n.hot?'hot':''}">${i+1}</div>
+      <div class="news-body">
+        <div class="news-headline">${n.headline}</div>
+        <div class="news-meta">
+          <span class="news-pill ${n.pill}">${n.label}</span>
+          <span class="news-source">${n.source}</span>
+          <span class="news-time">${n.time}</span>
+        </div>
+      </div>
+      <div class="news-trend">${n.trend}</div>
+    </div>
+  `).join('');
+}
+renderNews();
+
+// ── Chatbot ──
+let chatOpen = false;
+
+function toggleChat() {
+  chatOpen = !chatOpen;
+  document.getElementById('chatbot-window').classList.toggle('open', chatOpen);
+  document.getElementById('chat-toggle').querySelector('.chatbot-notif').style.display = chatOpen ? 'none' : 'flex';
+  if (chatOpen) document.getElementById('chat-input').focus();
+}
+
+const botReplies = {
+  'top stories': () => `🔥 Today's top stories:\n1. Polymarket hits $10B monthly volume\n2. World Cup handle projected at $4B+\n3. Spain blocks Kalshi & Polymarket\n4. NBA insider trading scandal\n\nHead to <a href="clickvibe-trending.html" style="color:#6366F1;font-weight:700;">Trending News</a> for the full dashboard.`,
+  'best offer':  () => `💰 Your best affiliate offer right now is <strong>PolyMarket</strong> at <strong>$80 per FTD</strong> (min. deposit $20).\n\nKalshi ($25/referral) and Fanatics (negotiated CPA) are also strong picks depending on your audience geo.\n\n<a href="clickvibe-offers.html" style="color:#6366F1;font-weight:700;">Browse all offers →</a>`,
+  'performance': () => `📊 This month so far:\n• <strong>463 clicks</strong> (+12%)\n• <strong>78 conversions</strong> (+8%)\n• <strong>$6,240 revenue</strong> (+18%)\n• Top site: <strong>PopCulture</strong>\n\n<a href="clickvibe-reporting.html" style="color:#6366F1;font-weight:700;">View full report →</a>`,
+  'default':     (msg) => `Thanks for your question! I'm a demo assistant — in the full version I'd connect to live data to answer "<em>${msg}</em>".\n\nFor now, try: "top stories", "best offer", or "my performance".`,
+};
+
+function getReply(msg) {
+  const m = msg.toLowerCase();
+  if (m.includes('stor') || m.includes('news') || m.includes('headline')) return botReplies['top stories']();
+  if (m.includes('offer') || m.includes('platform') || m.includes('affiliate') || m.includes('payout')) return botReplies['best offer']();
+  if (m.includes('performance') || m.includes('revenue') || m.includes('click') || m.includes('conversion') || m.includes('report')) return botReplies['performance']();
+  return botReplies['default'](msg);
+}
+
+function addMsg(text, role) {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `<div class="msg-bubble">${text.replace(/\n/g,'<br>')}</div><div class="msg-time">Just now</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg bot'; div.id = 'typing-indicator';
+  div.innerHTML = `<div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+function sendMsg() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  document.getElementById('quick-replies').style.display = 'none';
+  addMsg(text, 'user');
+  showTyping();
+  setTimeout(() => {
+    removeTyping();
+    addMsg(getReply(text), 'bot');
+  }, 900 + Math.random() * 400);
+}
+
+function sendQuick(text) {
+  document.getElementById('chat-input').value = text;
+  sendMsg();
+}
+</script>
+</body>
+</html>

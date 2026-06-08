@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clickvibe – Offers</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #F0F2FA;
+    display: flex;
+    min-height: 100vh;
+    color: #1a1a2e;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 220px;
+    min-height: 100vh;
+    background: #0D1B4B;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+  }
+
+  .logo-area {
+    padding: 28px 20px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .logo-wrap { display: flex; align-items: center; gap: 10px; }
+
+  .logo-text {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+
+  nav { padding: 20px 12px; flex: 1; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.55);
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+
+  .nav-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+
+  .nav-item.active {
+    background: rgba(99,102,241,0.25);
+    color: #fff;
+    border-left: 3px solid #6366F1;
+  }
+
+  .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  .sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.35);
+    font-size: 11px;
+  }
+
+  /* ── Main ── */
+  .main {
+    margin-left: 220px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    background: #fff;
+    border-bottom: 1px solid #E8EAEF;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .topbar h1 { font-size: 20px; font-weight: 700; color: #0D1B4B; }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #666;
+  }
+
+  .badge {
+    background: #6366F1;
+    color: #fff;
+    border-radius: 50%;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+  }
+
+  .content { padding: 28px 32px; flex: 1; }
+
+  /* ── Summary bar ── */
+  .summary-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .summary-left h2 { font-size: 18px; font-weight: 700; color: #0D1B4B; }
+  .summary-left p  { font-size: 13px; color: #6B7280; margin-top: 2px; }
+
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 7px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1.5px solid #E8EAEF;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+
+  .filter-btn:hover, .filter-btn.active {
+    background: #0D1B4B;
+    color: #fff;
+    border-color: #0D1B4B;
+  }
+
+  /* ── Offer Cards ── */
+  .offers-list { display: flex; flex-direction: column; gap: 20px; }
+
+  .offer-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #E8EAEF;
+    overflow: hidden;
+    display: flex;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+
+  .offer-card:hover {
+    box-shadow: 0 8px 32px rgba(13,27,75,0.10);
+    transform: translateY(-2px);
+  }
+
+  /* Left accent strip + brand */
+  .brand-col {
+    width: 200px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 20px;
+    position: relative;
+    gap: 12px;
+  }
+
+  .brand-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -1px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  }
+
+  .brand-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0D1B4B;
+    text-align: center;
+  }
+
+  .brand-type {
+    font-size: 11px;
+    font-weight: 600;
+    color: #9CA3AF;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .popularity-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* Middle: info */
+  .info-col {
+    flex: 1;
+    padding: 24px 28px;
+    border-left: 1px solid #F3F4F6;
+    border-right: 1px solid #F3F4F6;
+  }
+
+  .info-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    gap: 12px;
+  }
+
+  .cats { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .cat-pill {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #F0F2FA;
+    color: #4B5563;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .stat-item { display: flex; flex-direction: column; gap: 2px; }
+
+  .stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #9CA3AF;
+  }
+
+  .stat-value {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0D1B4B;
+  }
+
+  .news-box {
+    background: #F8F9FF;
+    border-left: 3px solid #6366F1;
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+  }
+
+  .news-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6366F1;
+    margin-bottom: 4px;
+  }
+
+  .news-text { font-size: 12px; color: #4B5563; line-height: 1.5; }
+
+  /* Right: offer details */
+  .offer-col {
+    width: 230px;
+    flex-shrink: 0;
+    padding: 24px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    justify-content: space-between;
+  }
+
+  .offer-details { display: flex; flex-direction: column; gap: 10px; }
+
+  .offer-row { display: flex; flex-direction: column; gap: 2px; }
+
+  .offer-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #9CA3AF;
+  }
+
+  .offer-value { font-size: 13px; font-weight: 600; color: #1F2937; }
+
+  .offer-value.highlight {
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .divider-h { width: 100%; height: 1px; background: #F3F4F6; }
+
+  .geo-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  .geo-pill {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    background: #F0F2FA;
+    color: #6B7280;
+  }
+
+  .cta-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.15s;
+    font-family: inherit;
+    letter-spacing: 0.2px;
+  }
+
+  .cta-btn:hover { opacity: 0.88; transform: scale(1.02); }
+
+  /* Stars */
+  .stars { color: #F59E0B; font-size: 13px; letter-spacing: 1px; }
+
+/* ── Hamburger ── */
+.hamburger { display:none; background:none; border:none; cursor:pointer; flex-direction:column; gap:5px; padding:4px; flex-shrink:0; }
+.hamburger span { display:block; width:22px; height:2px; background:#0D1B4B; border-radius:2px; }
+.sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:99; }
+.sidebar-overlay.active { display:block; }
+
+@media (max-width: 768px) {
+  .hamburger { display:flex; }
+  .sidebar { transform:translateX(-220px); transition:transform 0.28s ease; z-index:200; }
+  .sidebar.mobile-open { transform:translateX(0); }
+  .main { margin-left:0; width:100vw; }
+
+  .content { padding:14px; }
+  .topbar { padding:14px 16px; }
+  .topbar-right span { display:none; }
+
+  /* Summary bar */
+  .summary-bar { flex-direction:column; align-items:flex-start; }
+  .filter-bar { width:100%; }
+
+  /* Offer cards: stack vertically */
+  .offer-card { flex-direction:column; }
+  .brand-col { width:100%; flex-direction:row; padding:16px 18px; justify-content:flex-start; gap:14px; border-bottom:1px solid #F3F4F6; }
+  .info-col { border-left:none; border-right:none; border-top:none; padding:16px 18px; }
+  .offer-col { width:100%; padding:16px 18px; border-top:1px solid #F3F4F6; }
+  .cta-btn { padding:14px; }
+
+  /* Stats row wraps */
+  .stats-row { gap:14px; }
+  .stat-value { font-size:14px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="logo-area">
+    <div class="logo-wrap">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <polygon points="8,28 18,18 15,18 15,11 21,11 21,18 18,18" fill="#22C55E"/>
+        <circle cx="24" cy="8"  r="2.5" fill="#6366F1"/>
+        <circle cx="29" cy="11" r="2.5" fill="#6366F1"/>
+        <circle cx="31" cy="17" r="2.5" fill="#6366F1"/>
+        <circle cx="29" cy="23" r="2.5" fill="#6366F1" opacity="0.5"/>
+        <circle cx="24" cy="26" r="2.5" fill="#6366F1" opacity="0.3"/>
+      </svg>
+      <span class="logo-text">clickvibe</span>
+    </div>
+  </div>
+  <nav>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      Home
+    </a>
+    <a class="nav-item" href="clickvibe-reporting.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      </svg>
+      Reporting
+    </a>
+    <a class="nav-item active" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+        <line x1="7" y1="7" x2="7.01" y2="7"/>
+      </svg>
+      Offers
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+        <polyline points="17 6 23 6 23 12"/>
+      </svg>
+      Trending News
+    </a>
+  </nav>
+  <div class="sidebar-footer">© 2026 Clickvibe</div>
+</aside>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+<!-- ══ MAIN ══ -->
+<div class="main">
+  <div class="topbar">
+    <button class="hamburger" onclick="openSidebar()"><span></span><span></span><span></span></button>
+    <h1>Offers</h1>
+    <div class="topbar-right">
+      <span>Alex</span>
+      <div class="badge">A</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="summary-bar">
+      <div class="summary-left">
+        <h2>Partner Platforms</h2>
+        <p>6 active offers · Click any platform to get started and start earning</p>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterCards('all', this)">All</button>
+        <button class="filter-btn" onclick="filterCards('prediction', this)">Prediction Markets</button>
+        <button class="filter-btn" onclick="filterCards('sports', this)">Sports Betting</button>
+        <button class="filter-btn" onclick="filterCards('fantasy', this)">Fantasy</button>
+      </div>
+    </div>
+
+    <div class="offers-list" id="offers-list">
+
+      <!-- ── POLYMARKET ── -->
+      <div class="offer-card" data-type="prediction">
+        <div class="brand-col" style="background: linear-gradient(160deg, #EEF0FF 0%, #fff 100%);">
+          <div class="brand-logo" style="background: linear-gradient(135deg, #6366F1, #4F46E5);">PM</div>
+          <div class="brand-name">Polymarket</div>
+          <div class="brand-type">Prediction Market</div>
+          <div class="popularity-badge" style="background:rgba(99,102,241,0.1); color:#4F46E5;">
+            🌍 #1 Globally
+          </div>
+        </div>
+
+        <div class="info-col">
+          <div class="cats" style="margin-bottom:14px;">
+            <span class="cat-pill">Politics</span><span class="cat-pill">Sports</span>
+            <span class="cat-pill">Crypto</span><span class="cat-pill">Finance</span>
+            <span class="cat-pill">Technology</span><span class="cat-pill">Culture</span>
+            <span class="cat-pill">Weather</span><span class="cat-pill">+4 more</span>
+          </div>
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">Monthly Volume</div>
+              <div class="stat-value" style="color:#6366F1">$10B+</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Monthly Active Users</div>
+              <div class="stat-value">1.2M</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Market Position</div>
+              <div class="stat-value">World's #1</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">User Growth</div>
+              <div class="stat-value" style="color:#22C55E">+400% YoY</div>
+            </div>
+          </div>
+          <div class="news-box">
+            <div class="news-label">📰 Latest News</div>
+            <div class="news-text">Polymarket hit $10B+ in monthly trading volume for the first time in March 2026 — a landmark milestone. Combined volumes with Kalshi now exceed $24B/month, with prediction markets entering mainstream finance.</div>
+          </div>
+        </div>
+
+        <div class="offer-col">
+          <div class="offer-details">
+            <div class="offer-row">
+              <div class="offer-label">Affiliate Payout</div>
+              <div class="offer-value highlight" style="color:#6366F1">$80</div>
+            </div>
+            <div class="divider-h"></div>
+            <div class="offer-row">
+              <div class="offer-label">Action Required</div>
+              <div class="offer-value">FTD of $20</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">User Bonus</div>
+              <div class="offer-value">$50 Welcome Bonus</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">Platform</div>
+              <div class="offer-value">📱 App · iOS</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">Available In</div>
+              <div class="geo-pills"><span class="geo-pill">🇺🇸 US</span></div>
+            </div>
+          </div>
+          <button class="cta-btn" style="background: linear-gradient(135deg, #6366F1, #4F46E5);">
+            Get Started →
+          </button>
+        </div>
+      </div>
+
+      <!-- ── KALSHI ── -->
+      <div class="offer-card" data-type="prediction">
+        <div class="brand-col" style="background: linear-gradient(160deg, #ECFDF5 0%, #fff 100%);">
+          <div class="brand-logo" style="background: linear-gradient(135deg, #10B981, #059669);">K</div>
+          <div class="brand-name">Kalshi</div>
+          <div class="brand-type">Prediction Market</div>
+          <div class="popularity-badge" style="background:rgba(16,185,129,0.1); color:#059669;">
+            🏆 $22B Valuation
+          </div>
+        </div>
+
+        <div class="info-col">
+          <div class="cats" style="margin-bottom:14px;">
+            <span class="cat-pill">Politics</span><span class="cat-pill">Sports</span>
+            <span class="cat-pill">Crypto</span><span class="cat-pill">Economics</span>
+            <span class="cat-pill">Weather</span><span class="cat-pill">Culture</span>
+            <span class="cat-pill">Entertainment</span>
+          </div>
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">Market Share (Peak)</div>
+              <div class="stat-value" style="color:#10B981">66.4%</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">2025 Transactions</div>
+              <div class="stat-value">97M</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Volume Growth</div>
+              <div class="stat-value" style="color:#22C55E">+1,100% YoY</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Availability</div>
+              <div class="stat-value">All 50 States</div>
+            </div>
+          </div>
+          <div class="news-box" style="border-color:#10B981;">
+            <div class="news-label" style="color:#10B981;">📰 Latest News</div>
+            <div class="news-text">Kalshi locked in a $22B valuation in March 2026, edging ahead of Polymarket as the dominant prediction market. CFTC-regulated and available in all 50 US states — the only fully federally licensed prediction exchange.</div>
+          </div>
+        </div>
+
+        <div class="offer-col">
+          <div class="offer-details">
+            <div class="offer-row">
+              <div class="offer-label">Affiliate Payout</div>
+              <div class="offer-value highlight" style="color:#10B981">$25 / referral</div>
+            </div>
+            <div class="divider-h"></div>
+            <div class="offer-row">
+              <div class="offer-label">Action Required</div>
+              <div class="offer-value">Fund + 100 trades in 30 days</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">User Bonus</div>
+              <div class="offer-value">$25 Referral Bonus</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">Platform</div>
+              <div class="offer-value">🖥️ Web + 📱 App · iOS & Android</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">Available In</div>
+              <div class="geo-pills"><span class="geo-pill">🇺🇸 All 50 States</span></div>
+            </div>
+          </div>
+          <button class="cta-btn" style="background: linear-gradient(135deg, #10B981, #059669);">
+            Get Started →
+          </button>
+        </div>
+      </div>
+
+      <!-- ── FANATICS ── -->
+      <div class="offer-card" data-type="sports">
+        <div class="brand-col" style="background: linear-gradient(160deg, #FEF2F2 0%, #fff 100%);">
+          <div class="brand-logo" style="background: linear-gradient(135deg, #EF4444, #DC2626);">F</div>
+          <div class="brand-name">Fanatics</div>
+          <div class="brand-type">Sports Betting</div>
+          <div class="popularity-badge" style="background:rgba(239,68,68,0.1); color:#DC2626;">
+            📈 7.3% US Share
+          </div>
+        </div>
+
+        <div class="info-col">
+          <div class="cats" style="margin-bottom:14px;">
+            <span class="cat-pill">NFL</span><span class="cat-pill">NBA</span>
+            <span class="cat-pill">MLB</span><span class="cat-pill">NHL</span>
+            <span class="cat-pill">Soccer</span><span class="cat-pill">MMA</span>
+            <span class="cat-pill">Tennis</span><span class="cat-pill">+more</span>
+          </div>
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">US Market Share</div>
+              <div class="stat-value" style="color:#EF4444">7.3%</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Licensed States</div>
+              <div class="stat-value">22 + DC</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">2027 Revenue Target</div>
+              <div class="stat-value">40% from betting</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">FanCash Rewards</div>
+              <div class="stat-value">✅ Yes</div>
+            </div>
+          </div>
+          <div class="news-box" style="border-color:#EF4444;">
+            <div class="news-label" style="color:#EF4444;">📰 Latest News</div>
+            <div class="news-text">Fanatics Sportsbook is now live in 22 states + DC and growing fast. CEO Michael Rubin projects sports betting will represent ~40% of Fanatics' total profits by 2027, signalling massive upcoming investment in the platform.</div>
+          </div>
+        </div>
+
+        <div class="offer-col">
+          <div class="offer-details">
+            <div class="offer-row">
+              <div class="offer-label">Affiliate Payout</div>
+              <div class="offer-value highlight" style="color:#EF4444">Negotiated CPA</div>
+            </div>
+            <div class="divider-h"></div>
+            <div class="offer-row">
+              <div class="offer-label">Action Required</div>
+              <div class="offer-value">First Time Deposit</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">User Bonus</div>
+              <div class="offer-value">Up to $1,000 in FanCash</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">Platform</div>
+              <div class="offer-value">📱 App only · iOS & Android</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">Available In</div>
+              <div class="geo-pills">
+                <span class="geo-pill">NJ</span><span class="geo-pill">PA</span>
+                <span class="geo-pill">MI</span><span class="geo-pill">CO</span>
+                <span class="geo-pill">MA</span><span class="geo-pill">+17</span>
+              </div>
+            </div>
+          </div>
+          <button class="cta-btn" style="background: linear-gradient(135deg, #EF4444, #DC2626);">
+            Get Started →
+          </button>
+        </div>
+      </div>
+
+      <!-- ── BETR.APP ── -->
+      <div class="offer-card" data-type="fantasy sports">
+        <div class="brand-col" style="background: linear-gradient(160deg, #FFFBEB 0%, #fff 100%);">
+          <div class="brand-logo" style="background: linear-gradient(135deg, #F59E0B, #D97706);">B</div>
+          <div class="brand-name">betr.app</div>
+          <div class="brand-type">Gaming Super App</div>
+          <div class="popularity-badge" style="background:rgba(245,158,11,0.1); color:#D97706;">
+            🚀 Polymarket Partner
+          </div>
+        </div>
+
+        <div class="info-col">
+          <div class="cats" style="margin-bottom:14px;">
+            <span class="cat-pill">Fantasy Picks</span>
+            <span class="cat-pill">Social Sportsbook</span>
+            <span class="cat-pill">Social Casino</span>
+            <span class="cat-pill">Arcade</span>
+            <span class="cat-pill">Prediction Markets</span>
+          </div>
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">Fantasy States</div>
+              <div class="stat-value" style="color:#F59E0B">34 States</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Sportsbook States</div>
+              <div class="stat-value">32 States</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Products</div>
+              <div class="stat-value">5 Verticals</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">App Store Rating</div>
+              <div class="stat-value">⭐ 3.8</div>
+            </div>
+          </div>
+          <div class="news-box" style="border-color:#F59E0B;">
+            <div class="news-label" style="color:#D97706;">📰 Latest News</div>
+            <div class="news-text">Betr acquired Ascent Capital to become CFTC-registered and is adding Polymarket prediction markets as its 5th product vertical — making it one of the most comprehensive gaming super apps in the US market.</div>
+          </div>
+        </div>
+
+        <div class="offer-col">
+          <div class="offer-details">
+            <div class="offer-row">
+              <div class="offer-label">Affiliate Payout</div>
+              <div class="offer-value highlight" style="color:#F59E0B">CPA & RevShare</div>
+            </div>
+            <div class="divider-h"></div>
+            <div class="offer-row">
+              <div class="offer-label">Action Required</div>
+              <div class="offer-value">Deposit + $10+ entry</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">User Bonus</div>
+              <div class="offer-value">Up to $200 Bonus</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">Platform</div>
+              <div class="offer-value">📱 App only · iOS & Android</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">Available In</div>
+              <div class="geo-pills"><span class="geo-pill">25–34 States</span></div>
+            </div>
+          </div>
+          <button class="cta-btn" style="background: linear-gradient(135deg, #F59E0B, #D97706);">
+            Get Started →
+          </button>
+        </div>
+      </div>
+
+      <!-- ── NOVIG ── -->
+      <div class="offer-card" data-type="prediction sports">
+        <div class="brand-col" style="background: linear-gradient(160deg, #F5F3FF 0%, #fff 100%);">
+          <div class="brand-logo" style="background: linear-gradient(135deg, #8B5CF6, #7C3AED);">N</div>
+          <div class="brand-name">Novig</div>
+          <div class="brand-type">Sports Prediction Market</div>
+          <div class="popularity-badge" style="background:rgba(139,92,246,0.1); color:#7C3AED;">
+            💰 $500M Valuation
+          </div>
+        </div>
+
+        <div class="info-col">
+          <div class="cats" style="margin-bottom:14px;">
+            <span class="cat-pill">NFL</span><span class="cat-pill">NBA</span>
+            <span class="cat-pill">MLB</span><span class="cat-pill">NHL</span>
+            <span class="cat-pill">Soccer</span><span class="cat-pill">MMA</span>
+            <span class="cat-pill">Tennis</span>
+          </div>
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">Valuation</div>
+              <div class="stat-value" style="color:#8B5CF6">$500M</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Series B Raised</div>
+              <div class="stat-value">$75M</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Volume Growth (2025)</div>
+              <div class="stat-value" style="color:#22C55E">10x</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Legal States</div>
+              <div class="stat-value">42 States</div>
+            </div>
+          </div>
+          <div class="news-box" style="border-color:#8B5CF6;">
+            <div class="news-label" style="color:#7C3AED;">📰 Latest News</div>
+            <div class="news-text">Novig closed a $75M Series B at a $500M valuation (April 2026) and has filed for a CFTC Designated Contract Market licence — transitioning from sweepstakes to a fully federally regulated exchange operating in all 50 states.</div>
+          </div>
+        </div>
+
+        <div class="offer-col">
+          <div class="offer-details">
+            <div class="offer-row">
+              <div class="offer-label">Affiliate Payout</div>
+              <div class="offer-value highlight" style="color:#8B5CF6">25 Novig Cash</div>
+            </div>
+            <div class="divider-h"></div>
+            <div class="offer-row">
+              <div class="offer-label">Action Required</div>
+              <div class="offer-value">Sign up + meet wagering criteria</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">User Bonus</div>
+              <div class="offer-value">$50–$100 via promo codes</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">Platform</div>
+              <div class="offer-value">📱 App · iOS & Android</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">Available In</div>
+              <div class="geo-pills"><span class="geo-pill">🇺🇸 42 States</span></div>
+            </div>
+          </div>
+          <button class="cta-btn" style="background: linear-gradient(135deg, #8B5CF6, #7C3AED);">
+            Get Started →
+          </button>
+        </div>
+      </div>
+
+      <!-- ── UNDERDOG ── -->
+      <div class="offer-card" data-type="fantasy">
+        <div class="brand-col" style="background: linear-gradient(160deg, #ECFEFF 0%, #fff 100%);">
+          <div class="brand-logo" style="background: linear-gradient(135deg, #06B6D4, #0891B2);">U</div>
+          <div class="brand-name">Underdog</div>
+          <div class="brand-type">Fantasy Sports</div>
+          <div class="popularity-badge" style="background:rgba(6,182,212,0.1); color:#0891B2;">
+            🦄 $1.22B Valuation
+          </div>
+        </div>
+
+        <div class="info-col">
+          <div class="cats" style="margin-bottom:14px;">
+            <span class="cat-pill">Pick Em</span>
+            <span class="cat-pill">Champions</span>
+            <span class="cat-pill">Drafts</span>
+            <span class="cat-pill">NFL</span><span class="cat-pill">NBA</span>
+            <span class="cat-pill">MLB</span><span class="cat-pill">NHL</span>
+          </div>
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-label">Valuation</div>
+              <div class="stat-value" style="color:#06B6D4">$1.22B</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Total Raised</div>
+              <div class="stat-value">$115M</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Legal States</div>
+              <div class="stat-value">41 + DC</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Founded</div>
+              <div class="stat-value">2020 · Brooklyn</div>
+            </div>
+          </div>
+          <div class="news-box" style="border-color:#06B6D4;">
+            <div class="news-label" style="color:#0891B2;">📰 Latest News</div>
+            <div class="news-text">Underdog Fantasy is one of the fastest-growing fantasy sports platforms in the US, backed by Spark Capital and BlackRock. Its Pick Em format has taken the market by storm, available across 41 states and expanding.</div>
+          </div>
+        </div>
+
+        <div class="offer-col">
+          <div class="offer-details">
+            <div class="offer-row">
+              <div class="offer-label">Affiliate Payout</div>
+              <div class="offer-value highlight" style="color:#06B6D4">~$4.50–$6.05 CPA</div>
+            </div>
+            <div class="divider-h"></div>
+            <div class="offer-row">
+              <div class="offer-label">Action Required</div>
+              <div class="offer-value">FTD of $5+</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">User Bonus</div>
+              <div class="offer-value">$50–$75 Bonus Entries</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">Platform</div>
+              <div class="offer-value">📱 App · iOS & Android</div>
+            </div>
+            <div class="offer-row">
+              <div class="offer-label">Available In</div>
+              <div class="geo-pills"><span class="geo-pill">🇺🇸 41 States + DC</span></div>
+            </div>
+          </div>
+          <button class="cta-btn" style="background: linear-gradient(135deg, #06B6D4, #0891B2);">
+            Get Started →
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /offers-list -->
+  </div>
+</div>
+
+<script>
+function openSidebar() { document.querySelector('.sidebar').classList.add('mobile-open'); document.getElementById('sidebar-overlay').classList.add('active'); }
+function closeSidebar() { document.querySelector('.sidebar').classList.remove('mobile-open'); document.getElementById('sidebar-overlay').classList.remove('active'); }
+
+function filterCards(type, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  document.querySelectorAll('.offer-card').forEach(card => {
+    if (type === 'all') {
+      card.style.display = 'flex';
+    } else {
+      const t = card.dataset.type || '';
+      card.style.display = t.includes(type) ? 'flex' : 'none';
+    }
+  });
+}
+</script>
+</body>
+</html>

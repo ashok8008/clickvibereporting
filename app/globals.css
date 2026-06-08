@@ -1,0 +1,47 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: "Inter", system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-inter);
+  background: #f0f2fa;
+  color: #1a1a2e;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin scrollbars for in-app panels */
+.cv-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.cv-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+@keyframes cv-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-6px);
+  }
+}
