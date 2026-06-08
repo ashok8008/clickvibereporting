@@ -19,5 +19,5 @@ jobs:
           script: |
             export NVM_DIR="$HOME/.nvm"
             source "$NVM_DIR/nvm.sh"
-            cd ~/repo
+            cd ~/public_html
             ./deploy.sh
