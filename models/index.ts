@@ -184,6 +184,7 @@ const ConversionSchema = new Schema<IConversion>({
 export interface IAppsflyerSync {
   _id: Types.ObjectId;
   offerId: Types.ObjectId;
+  reportDate: string;
   syncedAt: Date;
   status: string;
   recordCount: number;
@@ -192,11 +193,13 @@ export interface IAppsflyerSync {
 
 const AppsflyerSyncSchema = new Schema<IAppsflyerSync>({
   offerId: { type: Schema.Types.ObjectId, ref: "Offer", required: true },
+  reportDate: { type: String },
   syncedAt: { type: Date, default: Date.now },
   status: { type: String, required: true },
   recordCount: { type: Number, default: 0 },
   error: { type: String },
 });
+AppsflyerSyncSchema.index({ offerId: 1, reportDate: 1 });
 
 /* ─────────────── Model exports (HMR-safe, strongly typed) ─────────────── */
 function getModel<T>(name: string, schema: Schema<T>): Model<T> {

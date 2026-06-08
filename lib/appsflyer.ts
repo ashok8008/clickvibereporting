@@ -6,6 +6,7 @@ export interface SyncResult {
   offerName: string;
   status: "success" | "error";
   recordCount: number;
+  reportDate?: string;
   error?: string;
   skipped?: boolean;
   reason?: string;
@@ -29,6 +30,97 @@ export function yesterdayRange(): {
   return { from: date, to: date, startOfYesterday, endOfYesterday };
 }
 
+function startOfToday(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export function isQuotaError(message: string): boolean {
+  return /maximum number of install reports|rate limit|quota/i.test(message);
+}
+
+async function findExistingSync(
+  offerId: unknown,
+  reportDate: string
+): Promise<{ status: string; recordCount: number; error?: string; reason: string } | null> {
+  const success = await AppsflyerSync.findOne({
+    offerId,
+    reportDate,
+    status: "success",
+  }).lean();
+  if (success) {
+    return {
+      status: "success",
+      recordCount: success.recordCount,
+      reason: "already synced",
+    };
+  }
+
+  const quotaHit = await AppsflyerSync.findOne({
+    offerId,
+    reportDate,
+    error: /maximum number of install reports/i,
+  }).lean();
+  if (quotaHit) {
+    return {
+      status: "error",
+      recordCount: 0,
+      error: quotaHit.error,
+      reason: "quota exceeded",
+    };
+  }
+
+  // One API attempt per offer per report date per calendar day.
+  const attemptedToday = await AppsflyerSync.findOne({
+    offerId,
+    reportDate,
+    syncedAt: { $gte: startOfToday() },
+  }).lean();
+  if (attemptedToday) {
+    return {
+      status: attemptedToday.status,
+      recordCount: attemptedToday.recordCount,
+      error: attemptedToday.error,
+      reason: attemptedToday.status === "error" ? "already attempted today" : "already synced",
+    };
+  }
+
+  // Legacy rows (before reportDate field was added).
+  const legacyToday = await AppsflyerSync.findOne({
+    offerId,
+    reportDate: { $exists: false },
+    syncedAt: { $gte: startOfToday() },
+  })
+    .sort({ syncedAt: -1 })
+    .lean();
+  if (legacyToday) {
+    if (legacyToday.status === "success") {
+      return {
+        status: "success",
+        recordCount: legacyToday.recordCount,
+        reason: "already synced",
+      };
+    }
+    if (legacyToday.error && isQuotaError(legacyToday.error)) {
+      return {
+        status: "error",
+        recordCount: 0,
+        error: legacyToday.error,
+        reason: "quota exceeded",
+      };
+    }
+    return {
+      status: legacyToday.status,
+      recordCount: legacyToday.recordCount,
+      error: legacyToday.error,
+      reason: "already attempted today",
+    };
+  }
+
+  return null;
+}
+
 /**
  * Pull yesterday's installs for a single offer from the AppsFlyer Pull API and
  * persist them as Conversion records (source=APPSFLYER). Logs an AppsflyerSync row.
@@ -41,21 +133,25 @@ async function syncOffer(offer: {
   appsflyerAppId: string;
 }): Promise<SyncResult> {
   const token = process.env.APPSFLYER_API_TOKEN;
-  const { from, to, startOfYesterday, endOfYesterday } = yesterdayRange();
+  const { from, to } = yesterdayRange();
 
-  const existing = await AppsflyerSync.findOne({
-    offerId: offer._id,
-    status: "success",
-    syncedAt: { $gte: startOfYesterday, $lte: endOfYesterday },
-  });
+  const existing = await findExistingSync(offer._id, from);
   if (existing) {
+    console.log("[appsflyer] skipping sync", {
+      offerId: String(offer._id),
+      offerName: offer.name,
+      reportDate: from,
+      reason: existing.reason,
+    });
     return {
       offerId: String(offer._id),
       offerName: offer.name,
-      status: "success",
+      status: existing.status === "success" ? "success" : "error",
       recordCount: existing.recordCount,
+      reportDate: from,
+      error: existing.error,
       skipped: true,
-      reason: "already synced",
+      reason: existing.reason,
     };
   }
 
@@ -63,6 +159,7 @@ async function syncOffer(offer: {
     if (!token) {
       await AppsflyerSync.create({
         offerId: offer._id,
+        reportDate: from,
         status: "error",
         recordCount: 0,
         error: "APPSFLYER_API_TOKEN not configured",
@@ -72,26 +169,33 @@ async function syncOffer(offer: {
         offerName: offer.name,
         status: "error",
         recordCount: 0,
+        reportDate: from,
         error: "APPSFLYER_API_TOKEN not configured",
       };
     }
 
     const url = `https://hq1.appsflyer.com/api/raw-data/export/app/${offer.appsflyerAppId}/installs_report/v5?from=${from}&to=${to}&timezone=UTC`;
 
+    console.log("[appsflyer] fetching installs", {
+      offerId: String(offer._id),
+      offerName: offer.name,
+      reportDate: from,
+      appId: offer.appsflyerAppId,
+    });
+
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token}`, Accept: "text/csv" },
     });
 
     if (!res.ok) {
-      throw new Error(`AppsFlyer API returned ${res.status}: ${await res.text()}`);
+      const body = await res.text();
+      throw new Error(`AppsFlyer API returned ${res.status}: ${body}`);
     }
 
     const csv = await res.text();
     const lines = csv.trim().split("\n");
     const recordCount = Math.max(0, lines.length - 1); // minus header
 
-    // Attribution mapping (media source / sub param → MediaSite) is best-effort.
-    // Persist an aggregate APPSFLYER conversion row capturing the install count.
     const sites = await MediaSite.find().lean();
     const header = lines[0]?.toLowerCase().split(",") ?? [];
     const mediaSourceIdx = header.findIndex((h) => h.includes("media_source") || h.includes("campaign"));
@@ -121,7 +225,14 @@ async function syncOffer(offer: {
 
     await AppsflyerSync.create({
       offerId: offer._id,
+      reportDate: from,
       status: "success",
+      recordCount,
+    });
+
+    console.log("[appsflyer] sync success", {
+      offerId: String(offer._id),
+      reportDate: from,
       recordCount,
     });
 
@@ -130,11 +241,19 @@ async function syncOffer(offer: {
       offerName: offer.name,
       status: "success",
       recordCount,
+      reportDate: from,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[appsflyer] sync failed", {
+      offerId: String(offer._id),
+      reportDate: from,
+      error: message,
+      quota: isQuotaError(message),
+    });
     await AppsflyerSync.create({
       offerId: offer._id,
+      reportDate: from,
       status: "error",
       recordCount: 0,
       error: message,
@@ -144,6 +263,7 @@ async function syncOffer(offer: {
       offerName: offer.name,
       status: "error",
       recordCount: 0,
+      reportDate: from,
       error: message,
     };
   }

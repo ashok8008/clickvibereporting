@@ -21,7 +21,8 @@ export default async function AppsflyerPage() {
         <div>
           <h2 className="text-lg font-bold text-navy">AppsFlyer Sync</h2>
           <p className="text-sm text-[#6B7280]">
-            Pulls install data daily at 06:00 UTC. Trigger a manual sync any time.
+            Pulls yesterday&apos;s install data daily at 06:00 UTC. Manual sync reuses cached
+            results and will not call AppsFlyer again if already synced or quota is reached.
           </p>
         </div>
         <SyncNowButton />
@@ -36,7 +37,7 @@ export default async function AppsflyerPage() {
           <table className="w-full min-w-[640px] border-collapse">
             <thead>
               <tr>
-                {["Date", "Offer", "Records", "Status", "Error"].map((h) => (
+                {["Date", "Report", "Offer", "Records", "Status", "Error"].map((h) => (
                   <th key={h} className="border-b border-cardborder bg-[#F8F9FF] px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-wide text-[#6B7280]">
                     {h}
                   </th>
@@ -46,7 +47,7 @@ export default async function AppsflyerPage() {
             <tbody>
               {syncs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center text-sm text-[#9CA3AF]">
+                  <td colSpan={6} className="py-10 text-center text-sm text-[#9CA3AF]">
                     No syncs run yet. Click “Sync Now” to pull yesterday’s installs.
                   </td>
                 </tr>
@@ -54,6 +55,7 @@ export default async function AppsflyerPage() {
                 syncs.map((s) => (
                   <tr key={String(s._id)} className="border-b border-[#F3F4F6] hover:bg-[#F8F9FF]">
                     <td className="px-4 py-3 text-sm text-[#374151]">{formatDate(s.syncedAt)}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-[#6B7280]">{s.reportDate ?? "—"}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-navy">
                       {offerMap.get(String(s.offerId)) ?? "—"}
                     </td>
