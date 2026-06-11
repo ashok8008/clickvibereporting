@@ -33,7 +33,7 @@ cp .env.local.example .env.local
 # then edit .env.local — at minimum set NEXTAUTH_SECRET (openssl rand -base64 32)
 # and DATABASE_URL if not using the local default.
 
-# 3. Seed the database (admin user, Polymarket offer, TFM Media publisher, sites, sample data)
+# 3. Seed the database (admin user, Polymarket offer, Savage.Ventures publisher, sites, sample data)
 npm run seed
 
 # 4. Run the dev server

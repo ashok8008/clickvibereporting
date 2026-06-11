@@ -105,7 +105,7 @@ export function PublisherForm({ onDone, onCancel }: { onDone: () => void; onCanc
         <div className="space-y-4">
           <div>
             <Label>Publisher / Company Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="TFM Media" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Savage.Ventures" />
           </div>
           <div>
             <Label>Contact Email</Label>

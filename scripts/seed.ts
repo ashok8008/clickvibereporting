@@ -7,6 +7,7 @@
 import bcrypt from "bcryptjs";
 import { dbConnect } from "../lib/db";
 import { buildOurTrackingUrl } from "../lib/tracking";
+import { getDateRangeForPreset } from "../lib/date-ranges";
 import {
   mongoose,
   User,
@@ -16,6 +17,7 @@ import {
   OfferAssignment,
   TrackingLink,
   Conversion,
+  Click,
   Role,
   OfferType,
   LinkMode,
@@ -53,6 +55,7 @@ async function main() {
     OfferAssignment.deleteMany({}),
     TrackingLink.deleteMany({}),
     Conversion.deleteMany({}),
+    Click.deleteMany({}),
   ]);
 
   // 1. Admin
@@ -76,14 +79,14 @@ async function main() {
   });
   console.log("Offer:", offer.name);
 
-  // 3. Publisher TFM Media + user
+  // 3. Publisher Savage.Ventures + user
   const pubUser = await User.create({
-    email: "chintan@origami.dev",
-    password: await bcrypt.hash("Origami@1", 10),
+    email: "alex@clickvibe.ai",
+    password: await bcrypt.hash("Alex@123", 10),
     role: Role.PUBLISHER,
-    name: "TFM Media",
+    name: "Savage.Ventures",
   });
-  const publisher = await Publisher.create({ name: "TFM Media", userId: pubUser._id });
+  const publisher = await Publisher.create({ name: "Savage.Ventures", userId: pubUser._id });
   console.log("Publisher:", publisher.name, "(", pubUser.email, ")");
 
   // 4. Sites with assigned colors
@@ -149,6 +152,23 @@ async function main() {
     });
   }
   console.log("Sample conversions imported:", SAMPLE_CONVERSIONS.length);
+
+  // 8. Sample clicks within the Last 7 Days range (for conversion rate KPI)
+  const allLinks = await TrackingLink.find().lean();
+  const matchedQualified = SAMPLE_CONVERSIONS.filter((row) =>
+    siteByName.get(row.promoCode.toUpperCase())
+  ).reduce((s, r) => s + r.qualified, 0);
+  const clickRange = getDateRangeForPreset("last7");
+  const clickRangeStart = new Date(`${clickRange.from}T00:00:00`);
+  const targetClicks = matchedQualified * 10; // 10% qualified-to-click rate
+  for (let i = 0; i < targetClicks; i++) {
+    const link = allLinks[i % allLinks.length];
+    const clickedAt = new Date(clickRangeStart);
+    clickedAt.setDate(clickRangeStart.getDate() + (i % 7));
+    clickedAt.setHours(9 + (i % 10), i % 60, 0, 0);
+    await Click.create({ trackingLinkId: link._id, clickedAt });
+  }
+  console.log("Sample clicks created:", targetClicks);
 
   await mongoose.disconnect();
   console.log("\n✅ Seed complete.");

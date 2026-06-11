@@ -1,7 +1,6 @@
 import { MousePointerClick, CheckCircle2, DollarSign } from "lucide-react";
 import { requireRole } from "@/lib/session";
 import { getPublisherDashboard } from "@/lib/dashboard";
-import { KpiCard } from "@/components/shared/KpiCard";
 import { SitePill } from "@/components/shared/SiteColorDot";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,23 +26,42 @@ export default async function PublisherDashboard() {
 
   const data = await getPublisherDashboard(publisherId);
 
+  const summaryMetrics = [
+    { label: "Total Clicks", value: formatNumber(data.totalClicks), icon: <MousePointerClick size={16} /> },
+    { label: "Total Qualified", value: formatNumber(data.totalQualified), icon: <CheckCircle2 size={16} /> },
+    { label: "Total Revenue", value: formatCurrency(data.totalRevenue), icon: <DollarSign size={16} /> },
+  ];
+
   return (
     <div className="flex flex-col gap-6">
       <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-navy via-[#1e3a8a] to-[#312e81] px-8 py-9">
         <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.3)_0%,transparent_70%)]" />
-        <div className="relative z-10">
-          <span className="mb-2 inline-block rounded-full border border-indigo/30 bg-indigo/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-indigo">
-            Publisher Portal
-          </span>
-          <h1 className="text-2xl font-black text-white md:text-3xl">{data.publisherName}</h1>
-          <p className="mt-1 text-sm text-white/65">Your sites, tracking links and live performance.</p>
+        <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div>
+            <span className="mb-2 inline-block rounded-full border border-indigo/30 bg-indigo/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-indigo">
+              Publisher Portal
+            </span>
+            <h1 className="text-2xl font-black text-white md:text-3xl">{data.publisherName}</h1>
+            <p className="mt-1 text-sm text-white/65">Your sites, tracking links and live performance.</p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-white/50">Month To Date</span>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {summaryMetrics.map((m) => (
+                <div
+                  key={m.label}
+                  className="rounded-xl border border-white/12 bg-white/8 px-4 py-3 backdrop-blur-sm"
+                >
+                  <div className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-white/50">
+                    {m.icon}
+                    {m.label}
+                  </div>
+                  <div className="text-xl font-black text-white">{m.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard label="My Clicks" value={formatNumber(data.totalClicks)} icon={<MousePointerClick size={18} />} accent="#6366F1" />
-        <KpiCard label="My Conversions" value={formatNumber(data.totalConversions)} icon={<CheckCircle2 size={18} />} accent="#22C55E" />
-        <KpiCard label="My Revenue" value={formatCurrency(data.totalRevenue)} icon={<DollarSign size={18} />} accent="#3B82F6" />
       </div>
 
       {/* My Sites */}
@@ -71,12 +89,12 @@ export default async function PublisherDashboard() {
                       <div className="text-[10px] uppercase text-[#9CA3AF]">Clicks</div>
                     </div>
                     <div className="rounded-lg bg-[#F8F9FF] py-2">
-                      <div className="text-sm font-extrabold text-navy">{formatNumber(s.conversions)}</div>
-                      <div className="text-[10px] uppercase text-[#9CA3AF]">Conv.</div>
+                      <div className="text-sm font-extrabold text-navy">{formatNumber(s.qualified)}</div>
+                      <div className="text-[10px] uppercase text-[#9CA3AF]">Qualified</div>
                     </div>
                     <div className="rounded-lg bg-[#F8F9FF] py-2">
                       <div className="text-sm font-extrabold text-success">{formatCurrency(s.revenue)}</div>
-                      <div className="text-[10px] uppercase text-[#9CA3AF]">Rev.</div>
+                      <div className="text-[10px] uppercase text-[#9CA3AF]">Revenue</div>
                     </div>
                   </div>
                 </CardBody>

@@ -227,8 +227,12 @@ export function PublisherDetail({
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <KpiCard label="Clicks" value={formatNumber(performance.kpis.totalClicks)} icon={<MousePointerClick size={18} />} />
-            <KpiCard label="Installs" value={formatNumber(performance.kpis.totalInstalls)} accent="#22C55E" />
-            <KpiCard label="Conversions" value={formatNumber(performance.kpis.totalConversions)} accent="#0D1B4B" />
+            <KpiCard label="Qualified" value={formatNumber(performance.kpis.totalQualified)} accent="#22C55E" />
+            <KpiCard
+              label="Conversion Rate"
+              value={`${performance.kpis.conversionRate}%`}
+              accent="#0D1B4B"
+            />
             <KpiCard label="Revenue" value={formatCurrency(performance.kpis.totalRevenue)} accent="#3B82F6" />
           </div>
           <Card className="overflow-hidden">
@@ -236,7 +240,7 @@ export function PublisherDetail({
               <table className="w-full min-w-[700px] border-collapse">
                 <thead>
                   <tr>
-                    {["Site", "Promo", "Clicks", "Signups", "Depositors", "Qualified", "Cost"].map((h, i) => (
+                    {["Site", "Clicks", "Installs", "Signups", "Depositors", "Traders", "Qualified", "Revenue"].map((h, i) => (
                       <th key={h} className={`border-b border-cardborder bg-[#F8F9FF] px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide text-[#6B7280] ${i >= 2 ? "text-right" : "text-left"}`}>
                         {h}
                       </th>
@@ -246,7 +250,7 @@ export function PublisherDetail({
                 <tbody>
                   {performance.rows.filter((r) => r.type === "site").length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-sm text-[#9CA3AF]">No performance data yet.</td>
+                      <td colSpan={8} className="py-8 text-center text-sm text-[#9CA3AF]">No performance data yet.</td>
                     </tr>
                   ) : (
                     performance.rows
@@ -254,10 +258,12 @@ export function PublisherDetail({
                       .map((r, i) =>
                         r.type === "grandTotal" ? (
                           <tr key={i} className="border-t-2 border-indigo bg-[#F0F2FA]">
-                            <td className="px-4 py-3 text-sm font-extrabold text-navy" colSpan={2}>Total</td>
+                            <td className="px-4 py-3 text-sm font-extrabold text-navy">Total</td>
                             <td className="px-4 py-3 text-right text-sm font-extrabold text-navy">{formatNumber(r.clicks)}</td>
+                            <td className="px-4 py-3 text-right text-sm font-extrabold text-navy">{formatNumber(r.installs)}</td>
                             <td className="px-4 py-3 text-right text-sm font-extrabold text-navy">{formatNumber(r.signups)}</td>
                             <td className="px-4 py-3 text-right text-sm font-extrabold text-navy">{formatNumber(r.depositors)}</td>
+                            <td className="px-4 py-3 text-right text-sm font-extrabold text-navy">{formatNumber(r.traders)}</td>
                             <td className="px-4 py-3 text-right text-sm font-extrabold text-navy">{formatNumber(r.qualified)}</td>
                             <td className="px-4 py-3 text-right text-sm font-extrabold text-navy">{formatCurrency(r.totalCost)}</td>
                           </tr>
@@ -266,10 +272,11 @@ export function PublisherDetail({
                             <td className="px-4 py-3 text-sm">
                               <SitePill name={r.siteName ?? r.label} color={r.siteColor ?? "#9CA3AF"} />
                             </td>
-                            <td className="px-4 py-3 text-sm text-[#374151]">{r.promoCode ?? "—"}</td>
                             <td className="px-4 py-3 text-right text-sm">{formatNumber(r.clicks)}</td>
+                            <td className="px-4 py-3 text-right text-sm">{formatNumber(r.installs)}</td>
                             <td className="px-4 py-3 text-right text-sm">{formatNumber(r.signups)}</td>
                             <td className="px-4 py-3 text-right text-sm">{formatNumber(r.depositors)}</td>
+                            <td className="px-4 py-3 text-right text-sm">{formatNumber(r.traders)}</td>
                             <td className="px-4 py-3 text-right text-sm">{formatNumber(r.qualified)}</td>
                             <td className="px-4 py-3 text-right text-sm font-bold text-navy">{formatCurrency(r.totalCost)}</td>
                           </tr>

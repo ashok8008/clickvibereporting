@@ -1,19 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Users, CheckCircle2, BarChart3, DollarSign, TrendingUp } from "lucide-react";
+import { MousePointerClick, CheckCircle2, DollarSign, Percent } from "lucide-react";
 import { KpiCard } from "@/components/shared/KpiCard";
 import { SitePill } from "@/components/shared/SiteColorDot";
+import { DateRangePicker } from "@/components/shared/DateRangePicker";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConversionLineChart } from "@/components/charts/ConversionLineChart";
 import { RevenueBarChart } from "@/components/charts/RevenueBarChart";
 import { formatCurrency, formatNumber } from "@/lib/utils";
-import type { ReportResult } from "@/lib/reporting";
+import { getDateRangeForPreset, type DatePreset } from "@/lib/date-ranges";
+import type { ReportResult, ReportRow } from "@/lib/reporting";
 
 interface FilterOptions {
   offers: { id: string; name: string }[];
@@ -25,24 +25,62 @@ interface Props {
   scope: "admin" | "publisher";
   initialData: ReportResult;
   filterOptions: FilterOptions;
+  defaultPreset?: DatePreset;
 }
 
-export function ReportingView({ scope, initialData, filterOptions }: Props) {
+const TABLE_COLUMNS = ["Site", "Clicks", "Installs", "Signups", "Depositors", "Traders", "Qualified", "Revenue"] as const;
+
+function pctOrNull(num: number, den: number): string | null {
+  if (!den) return null;
+  return `${+((num / den) * 100).toFixed(1)}%`;
+}
+
+function formatFunnelValue(value: number, pct: string | null, showPct: boolean): string {
+  if (!showPct || !pct) return formatNumber(value);
+  return `${formatNumber(value)} (${pct})`;
+}
+
+function FunnelCell({
+  row,
+  field,
+  prevField,
+  showPct,
+  className,
+}: {
+  row: ReportRow;
+  field: keyof Pick<ReportRow, "clicks" | "installs" | "signups" | "depositors" | "traders" | "qualified">;
+  prevField: keyof Pick<ReportRow, "clicks" | "installs" | "signups" | "depositors" | "traders" | "qualified"> | null;
+  showPct: boolean;
+  className?: string;
+}) {
+  const value = row[field] as number;
+  const prev = prevField ? (row[prevField] as number) : null;
+  const pct = prevField && prev != null ? pctOrNull(value, prev) : null;
+  return <td className={className}>{formatFunnelValue(value, pct, showPct)}</td>;
+}
+
+export function ReportingView({ scope, initialData, filterOptions, defaultPreset = "last7" }: Props) {
+  const defaultRange = getDateRangeForPreset(defaultPreset);
   const [data, setData] = useState<ReportResult>(initialData);
   const [loading, setLoading] = useState(false);
+  const [showPct, setShowPct] = useState(false);
+  const [datePreset, setDatePreset] = useState<DatePreset>(defaultPreset);
+  const [dateDraft, setDateDraft] = useState({
+    from: defaultRange.from,
+    to: defaultRange.to,
+  });
   const [filters, setFilters] = useState({
-    from: "",
-    to: "",
+    from: defaultRange.from,
+    to: defaultRange.to,
     offerId: "",
     publisherId: "",
     siteId: "",
-    source: "",
   });
 
-  const apply = async () => {
+  const fetchData = async (nextFilters: typeof filters) => {
     setLoading(true);
     const params = new URLSearchParams();
-    Object.entries(filters).forEach(([k, v]) => v && params.set(k, v));
+    Object.entries(nextFilters).forEach(([k, v]) => v && params.set(k, v));
     try {
       const res = await fetch(`/api/reporting?${params.toString()}`);
       if (res.ok) setData(await res.json());
@@ -51,50 +89,53 @@ export function ReportingView({ scope, initialData, filterOptions }: Props) {
     }
   };
 
+  const apply = () => fetchData(filters);
+
   const reset = async () => {
-    setFilters({ from: "", to: "", offerId: "", publisherId: "", siteId: "", source: "" });
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/reporting`);
-      if (res.ok) setData(await res.json());
-    } finally {
-      setLoading(false);
-    }
+    const next = { ...filters, offerId: "", publisherId: "", siteId: "" };
+    setFilters(next);
+    await fetchData(next);
+  };
+
+  const applyDateRange = async () => {
+    if (!dateDraft.from || !dateDraft.to) return;
+    const next = { ...filters, from: dateDraft.from, to: dateDraft.to };
+    setFilters(next);
+    await fetchData(next);
+  };
+
+  const handlePresetChange = (preset: DatePreset) => {
+    setDatePreset(preset);
+    if (preset === "custom") return;
+    const range = getDateRangeForPreset(preset);
+    setDateDraft({ from: range.from, to: range.to });
+  };
+
+  const handleFromChange = (from: string) => {
+    setDatePreset("custom");
+    setDateDraft((d) => ({ ...d, from }));
+  };
+
+  const handleToChange = (to: string) => {
+    setDatePreset("custom");
+    setDateDraft((d) => ({ ...d, to }));
   };
 
   const exportCsv = () => {
-    const header = [
-      "Publisher",
-      "Site",
-      "Promo Code",
-      "Clicks",
-      "Signups",
-      "Depositors",
-      "Sign→Dep%",
-      "Traders",
-      "Qualified",
-      "Sign→Qual%",
-      "CPA",
-      "Total Cost",
-      "Source",
-    ];
+    const header = ["Publisher", ...TABLE_COLUMNS];
     const lines = data.rows
       .filter((r) => r.type === "site")
       .map((r) =>
         [
           r.publisherName ?? "",
           r.siteName ?? r.label,
-          r.promoCode ?? "",
           r.clicks,
+          r.installs,
           r.signups,
           r.depositors,
-          r.signupToDepPct ?? "",
           r.traders,
           r.qualified,
-          r.signupToQualPct ?? "",
-          r.cpa,
           r.totalCost,
-          r.source ?? "",
         ].join(",")
       );
     const blob = new Blob([[header.join(","), ...lines].join("\n")], { type: "text/csv" });
@@ -108,29 +149,47 @@ export function ReportingView({ scope, initialData, filterOptions }: Props) {
     ? filterOptions.sites.filter((s) => s.publisherId === filters.publisherId)
     : filterOptions.sites;
 
+  const conversionRateDisplay = `${data.kpis.conversionRate}%`;
+
+  const renderFunnelCells = (row: ReportRow, cellClass: string) => (
+    <>
+      <FunnelCell row={row} field="clicks" prevField={null} showPct={false} className={cellClass} />
+      <FunnelCell row={row} field="installs" prevField="clicks" showPct={showPct} className={cellClass} />
+      <FunnelCell row={row} field="signups" prevField="installs" showPct={showPct} className={cellClass} />
+      <FunnelCell row={row} field="depositors" prevField="signups" showPct={showPct} className={cellClass} />
+      <FunnelCell row={row} field="traders" prevField="depositors" showPct={showPct} className={cellClass} />
+      <FunnelCell row={row} field="qualified" prevField="traders" showPct={showPct} className={cellClass} />
+    </>
+  );
+
   return (
     <div className="flex flex-col gap-6">
+      <DateRangePicker
+        preset={datePreset}
+        from={dateDraft.from}
+        to={dateDraft.to}
+        onPresetChange={handlePresetChange}
+        onFromChange={handleFromChange}
+        onToChange={handleToChange}
+        onApply={applyDateRange}
+        applying={loading}
+      />
+
       <div>
         <h2 className="text-lg font-bold text-navy">Performance Reporting</h2>
-        <p className="text-sm text-[#6B7280]">
-          Clicks, conversions and revenue rolled up by publisher and site.
-        </p>
       </div>
 
-      {/* KPI row */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <KpiCard label="Total Clicks" value={formatNumber(data.kpis.totalClicks)} icon={<Users size={18} />} accent="#6366F1" />
-        <KpiCard label="Installs" value={formatNumber(data.kpis.totalInstalls)} icon={<TrendingUp size={18} />} accent="#22C55E" />
-        <KpiCard label="Conversions" value={formatNumber(data.kpis.totalConversions)} icon={<CheckCircle2 size={18} />} accent="#0D1B4B" />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <KpiCard label="Clicks" value={formatNumber(data.kpis.totalClicks)} icon={<MousePointerClick size={18} />} accent="#6366F1" />
+        <KpiCard label="Qualified" value={formatNumber(data.kpis.totalQualified)} icon={<CheckCircle2 size={18} />} accent="#22C55E" />
+        <KpiCard label="Conversion Rate" value={conversionRateDisplay} icon={<Percent size={18} />} accent="#0D1B4B" />
         <KpiCard label="Revenue" value={formatCurrency(data.kpis.totalRevenue)} icon={<DollarSign size={18} />} accent="#3B82F6" />
-        <KpiCard label="Avg CPA" value={formatCurrency(data.kpis.avgCpa)} icon={<BarChart3 size={18} />} accent="#F59E0B" />
       </div>
 
-      {/* Charts */}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Conversions Over Time</CardTitle>
+            <CardTitle>Qualified</CardTitle>
           </CardHeader>
           <CardBody>
             <ConversionLineChart data={data.timeSeries} />
@@ -138,24 +197,15 @@ export function ReportingView({ scope, initialData, filterOptions }: Props) {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Revenue by Publisher</CardTitle>
+            <CardTitle>Revenue by Site</CardTitle>
           </CardHeader>
           <CardBody>
-            <RevenueBarChart data={data.revenueByPublisher} />
+            <RevenueBarChart data={data.revenueBySite} />
           </CardBody>
         </Card>
       </div>
 
-      {/* Toolbar */}
       <div className="flex flex-wrap items-end gap-3 rounded-card border border-cardborder bg-white p-4">
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-[#6B7280]">From</label>
-          <Input type="date" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} className="w-auto" />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-[#6B7280]">To</label>
-          <Input type="date" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} className="w-auto" />
-        </div>
         {scope === "admin" && (
           <div>
             <label className="mb-1 block text-xs font-semibold text-[#6B7280]">Publisher</label>
@@ -195,26 +245,26 @@ export function ReportingView({ scope, initialData, filterOptions }: Props) {
             ))}
           </Select>
         </div>
-        <div>
-          <label className="mb-1 block text-xs font-semibold text-[#6B7280]">Source</label>
-          <Select value={filters.source} onChange={(e) => setFilters({ ...filters, source: e.target.value })} className="w-auto min-w-[130px]">
-            <option value="">All Sources</option>
-            <option value="APPSFLYER">AppsFlyer</option>
-            <option value="CSV_UPLOAD">CSV Upload</option>
-          </Select>
-        </div>
         <Button onClick={apply} disabled={loading}>
           {loading ? "Loading…" : "Apply"}
         </Button>
         <Button variant="outline" onClick={reset} disabled={loading}>
           Reset
         </Button>
+        <Button
+          variant={showPct ? "primary" : "outline"}
+          onClick={() => setShowPct((v) => !v)}
+          disabled={loading}
+          title="Toggle funnel conversion percentages"
+          className="min-w-[40px] px-3"
+        >
+          %
+        </Button>
         <Button variant="green" onClick={exportCsv} className="ml-auto">
           ↓ Export CSV
         </Button>
       </div>
 
-      {/* Table */}
       <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle>Performance Data</CardTitle>
@@ -233,24 +283,22 @@ export function ReportingView({ scope, initialData, filterOptions }: Props) {
             <table className="w-full min-w-[900px] border-collapse">
               <thead>
                 <tr>
-                  {["Site", "Promo Code", "Clicks", "Signups", "Depositors", "Sign→Dep%", "Traders", "Qualified", "Sign→Qual%", "CPA", "Total Cost", "Source"].map(
-                    (h, i) => (
-                      <th
-                        key={h}
-                        className={`whitespace-nowrap border-b border-cardborder bg-[#F8F9FF] px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide text-[#6B7280] ${
-                          i >= 2 && i <= 10 ? "text-right" : "text-left"
-                        }`}
-                      >
-                        {h}
-                      </th>
-                    )
-                  )}
+                  {TABLE_COLUMNS.map((h, i) => (
+                    <th
+                      key={h}
+                      className={`whitespace-nowrap border-b border-cardborder bg-[#F8F9FF] px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide text-[#6B7280] ${
+                        i >= 1 ? "text-right" : "text-left"
+                      }`}
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {data.rows.length <= 1 ? (
                   <tr>
-                    <td colSpan={12} className="py-10 text-center text-sm text-[#9CA3AF]">
+                    <td colSpan={8} className="py-10 text-center text-sm text-[#9CA3AF]">
                       No data for the selected filters.
                     </td>
                   </tr>
@@ -259,38 +307,18 @@ export function ReportingView({ scope, initialData, filterOptions }: Props) {
                     if (r.type === "grandTotal") {
                       return (
                         <tr key={i} className="border-t-[3px] border-indigo">
-                          <td className="bg-navy px-4 py-3.5 text-sm font-extrabold text-white" colSpan={2}>
-                            Grand Total
-                          </td>
-                          <td className="bg-navy px-4 py-3.5 text-right text-sm font-extrabold text-white">{formatNumber(r.clicks)}</td>
-                          <td className="bg-navy px-4 py-3.5 text-right text-sm font-extrabold text-white">{formatNumber(r.signups)}</td>
-                          <td className="bg-navy px-4 py-3.5 text-right text-sm font-extrabold text-white">{formatNumber(r.depositors)}</td>
-                          <td className="bg-navy px-4 py-3.5 text-right text-sm font-extrabold text-white">{r.signupToDepPct != null ? `${r.signupToDepPct}%` : "—"}</td>
-                          <td className="bg-navy px-4 py-3.5 text-right text-sm font-extrabold text-white">{formatNumber(r.traders)}</td>
-                          <td className="bg-navy px-4 py-3.5 text-right text-sm font-extrabold text-white">{formatNumber(r.qualified)}</td>
-                          <td className="bg-navy px-4 py-3.5 text-right text-sm font-extrabold text-white">{r.signupToQualPct != null ? `${r.signupToQualPct}%` : "—"}</td>
-                          <td className="bg-navy px-4 py-3.5 text-right text-sm font-extrabold text-white">{formatCurrency(r.cpa)}</td>
+                          <td className="bg-navy px-4 py-3.5 text-sm font-extrabold text-white">Grand Total</td>
+                          {renderFunnelCells(r, "bg-navy px-4 py-3.5 text-right text-sm font-extrabold text-white")}
                           <td className="bg-navy px-4 py-3.5 text-right text-sm font-extrabold text-white">{formatCurrency(r.totalCost)}</td>
-                          <td className="bg-navy px-4 py-3.5 text-white" />
                         </tr>
                       );
                     }
                     if (r.type === "publisherSubtotal") {
                       return (
                         <tr key={i} className="bg-[#F0F2FA]">
-                          <td className="px-4 py-2.5 text-sm font-bold text-navy" colSpan={2}>
-                            {r.label}
-                          </td>
-                          <td className="px-4 py-2.5 text-right text-sm font-bold text-navy">{formatNumber(r.clicks)}</td>
-                          <td className="px-4 py-2.5 text-right text-sm font-bold text-navy">{formatNumber(r.signups)}</td>
-                          <td className="px-4 py-2.5 text-right text-sm font-bold text-navy">{formatNumber(r.depositors)}</td>
-                          <td className="px-4 py-2.5 text-right text-sm font-bold text-navy">{r.signupToDepPct != null ? `${r.signupToDepPct}%` : "—"}</td>
-                          <td className="px-4 py-2.5 text-right text-sm font-bold text-navy">{formatNumber(r.traders)}</td>
-                          <td className="px-4 py-2.5 text-right text-sm font-bold text-navy">{formatNumber(r.qualified)}</td>
-                          <td className="px-4 py-2.5 text-right text-sm font-bold text-navy">{r.signupToQualPct != null ? `${r.signupToQualPct}%` : "—"}</td>
-                          <td className="px-4 py-2.5 text-right text-sm font-bold text-navy">{formatCurrency(r.cpa)}</td>
+                          <td className="px-4 py-2.5 text-sm font-bold text-navy">{r.label}</td>
+                          {renderFunnelCells(r, "px-4 py-2.5 text-right text-sm font-bold text-navy")}
                           <td className="px-4 py-2.5 text-right text-sm font-bold text-navy">{formatCurrency(r.totalCost)}</td>
-                          <td className="px-4 py-2.5" />
                         </tr>
                       );
                     }
@@ -303,23 +331,8 @@ export function ReportingView({ scope, initialData, filterOptions }: Props) {
                         <td className="px-4 py-3 text-sm">
                           <SitePill name={r.siteName ?? r.label} color={r.siteColor ?? "#9CA3AF"} />
                         </td>
-                        <td className="px-4 py-3 text-sm text-[#374151]">{r.promoCode ?? "—"}</td>
-                        <td className="px-4 py-3 text-right text-sm text-[#374151]">{formatNumber(r.clicks)}</td>
-                        <td className="px-4 py-3 text-right text-sm text-[#374151]">{formatNumber(r.signups)}</td>
-                        <td className="px-4 py-3 text-right text-sm text-[#374151]">{formatNumber(r.depositors)}</td>
-                        <td className="px-4 py-3 text-right text-sm text-[#374151]">{r.signupToDepPct != null ? `${r.signupToDepPct}%` : "—"}</td>
-                        <td className="px-4 py-3 text-right text-sm text-[#374151]">{formatNumber(r.traders)}</td>
-                        <td className="px-4 py-3 text-right text-sm text-[#374151]">{formatNumber(r.qualified)}</td>
-                        <td className="px-4 py-3 text-right text-sm text-[#374151]">{r.signupToQualPct != null ? `${r.signupToQualPct}%` : "—"}</td>
-                        <td className="px-4 py-3 text-right text-sm text-[#374151]">{formatCurrency(r.cpa)}</td>
+                        {renderFunnelCells(r, "px-4 py-3 text-right text-sm text-[#374151]")}
                         <td className="px-4 py-3 text-right text-sm font-bold text-navy">{formatCurrency(r.totalCost)}</td>
-                        <td className="px-4 py-3 text-sm">
-                          {r.source && (
-                            <Badge className="text-[10px]">
-                              {r.source.includes("APPSFLYER") ? "AppsFlyer" : "CSV"}
-                            </Badge>
-                          )}
-                        </td>
                       </tr>
                     );
                   })

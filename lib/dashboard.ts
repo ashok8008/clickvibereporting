@@ -8,6 +8,7 @@ import {
   MediaSite,
   TrackingLink,
 } from "@/models";
+import { monthToDateStart } from "./date-ranges";
 
 export interface DashboardData {
   totalClicks: number;
@@ -99,7 +100,7 @@ export async function getAdminDashboard(): Promise<DashboardData> {
 export interface PublisherDashboardData {
   publisherName: string;
   totalClicks: number;
-  totalConversions: number;
+  totalQualified: number;
   totalRevenue: number;
   sites: {
     id: string;
@@ -107,7 +108,7 @@ export interface PublisherDashboardData {
     url: string | null;
     color: string;
     clicks: number;
-    conversions: number;
+    qualified: number;
     revenue: number;
   }[];
   links: {
@@ -132,21 +133,26 @@ export async function getPublisherDashboard(publisherId: string): Promise<Publis
   const linkIds = links.map((l) => l._id);
   const offers = await Offer.find().lean();
   const offerMap = new Map(offers.map((o) => [String(o._id), o]));
+  const mtdStart = monthToDateStart();
 
   // Clicks per link (CONVERTED only contribute to publisher click totals)
   const clickAgg = await Click.aggregate([
-    { $match: { trackingLinkId: { $in: linkIds } } },
+    { $match: { trackingLinkId: { $in: linkIds }, clickedAt: { $gte: mtdStart } } },
     { $group: { _id: "$trackingLinkId", count: { $sum: 1 } } },
   ]);
   const clicksByLink = new Map(clickAgg.map((c) => [String(c._id), c.count]));
 
   const convAgg = await Conversion.aggregate([
-    { $match: { siteId: { $in: siteIds } } },
+    {
+      $match: {
+        siteId: { $in: siteIds },
+        periodStart: { $gte: mtdStart },
+      },
+    },
     {
       $group: {
         _id: "$siteId",
         qualified: { $sum: "$qualified" },
-        depositors: { $sum: "$depositors" },
         revenue: { $sum: "$totalCost" },
       },
     },
@@ -167,14 +173,24 @@ export async function getPublisherDashboard(publisherId: string): Promise<Publis
       url: s.url ?? null,
       color: s.colorAccent,
       clicks: clicksBySite.get(String(s._id)) || 0,
-      conversions: ((conv?.qualified as number) || 0) + ((conv?.depositors as number) || 0),
+      qualified: (conv?.qualified as number) || 0,
       revenue: (conv?.revenue as number) || 0,
     };
   });
 
   const siteById = new Map(sites.map((s) => [String(s._id), s]));
 
-  const linkRows = links.map((l) => {
+  // One tracking link per site — prefer CONVERTED over DIRECT to avoid duplicates (e.g. VICE)
+  const bestLinkBySite = new Map<string, (typeof links)[number]>();
+  for (const link of links) {
+    const siteKey = String(link.siteId);
+    const existing = bestLinkBySite.get(siteKey);
+    if (!existing || link.linkMode === "CONVERTED") {
+      bestLinkBySite.set(siteKey, link);
+    }
+  }
+
+  const linkRows = [...bestLinkBySite.values()].map((l) => {
     const site = siteById.get(String(l.siteId));
     const offer = offerMap.get(String(l.offerId));
     const url =
@@ -195,7 +211,7 @@ export async function getPublisherDashboard(publisherId: string): Promise<Publis
   return {
     publisherName: publisher?.name ?? "Publisher",
     totalClicks: siteRows.reduce((s, r) => s + r.clicks, 0),
-    totalConversions: siteRows.reduce((s, r) => s + r.conversions, 0),
+    totalQualified: siteRows.reduce((s, r) => s + r.qualified, 0),
     totalRevenue: siteRows.reduce((s, r) => s + r.revenue, 0),
     sites: siteRows,
     links: linkRows,

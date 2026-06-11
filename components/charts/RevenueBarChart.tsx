@@ -12,12 +12,12 @@ import {
 } from "recharts";
 
 interface Datum {
-  publisherId: string;
   name: string;
   revenue: number;
+  color?: string;
 }
 
-const COLORS = ["#6366F1", "#EC4899", "#F59E0B", "#10B981", "#3B82F6", "#EF4444"];
+const FALLBACK_COLORS = ["#6366F1", "#EC4899", "#F59E0B", "#10B981", "#3B82F6", "#EF4444"];
 
 export function RevenueBarChart({ data }: { data: Datum[] }) {
   if (!data.length) {
@@ -36,8 +36,8 @@ export function RevenueBarChart({ data }: { data: Datum[] }) {
           formatter={(v: number) => [`$${v.toLocaleString()}`, "Revenue"]}
         />
         <Bar dataKey="revenue" radius={[6, 6, 0, 0]}>
-          {data.map((_, i) => (
-            <Cell key={i} fill={COLORS[i % COLORS.length]} />
+          {data.map((d, i) => (
+            <Cell key={i} fill={d.color ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length]} />
           ))}
         </Bar>
       </BarChart>

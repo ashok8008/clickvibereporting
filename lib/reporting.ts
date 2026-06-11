@@ -7,6 +7,7 @@ import {
   Publisher,
   Offer,
 } from "@/models";
+import { ConversionSource } from "@/models/enums";
 import type { FilterQuery } from "mongoose";
 
 export interface ReportFilters {
@@ -26,35 +27,50 @@ export interface ReportRow {
   siteId: string | null;
   siteName: string | null;
   siteColor: string | null;
-  promoCode: string | null;
   clicks: number;
+  installs: number;
   signups: number;
   depositors: number;
-  signupToDepPct: number | null;
   traders: number;
   qualified: number;
-  signupToQualPct: number | null;
-  cpa: number;
   totalCost: number;
-  source: string | null;
 }
 
 export interface ReportResult {
   rows: ReportRow[];
   kpis: {
     totalClicks: number;
-    totalInstalls: number;
-    totalConversions: number;
+    totalQualified: number;
+    conversionRate: number;
     totalRevenue: number;
-    avgCpa: number;
   };
   timeSeries: { date: string; siteId: string; siteName: string; color: string; conversions: number }[];
-  revenueByPublisher: { publisherId: string; name: string; revenue: number }[];
+  revenueBySite: { siteId: string; name: string; color: string; revenue: number }[];
 }
 
 function pctOrNull(num: number, den: number): number | null {
   if (!den) return null;
   return +((num / den) * 100).toFixed(1);
+}
+
+/** Qualified-to-click rate; returns 0 when there are no clicks in range. */
+function conversionRateKpi(qualified: number, clicks: number): number {
+  if (!clicks) return 0;
+  return +((qualified / clicks) * 100).toFixed(1);
+}
+
+function parseFilterDate(dateStr: string, endOfDay = false): Date {
+  const d = new Date(`${dateStr}T00:00:00`);
+  if (endOfDay) d.setHours(23, 59, 59, 999);
+  return d;
+}
+
+function clickDateRange(filters: ReportFilters): FilterQuery<Record<string, unknown>> | undefined {
+  if (!filters.from && !filters.to) return undefined;
+  const range: Record<string, Date> = {};
+  if (filters.from) range.$gte = parseFilterDate(filters.from);
+  if (filters.to) range.$lte = parseFilterDate(filters.to, true);
+  return range;
 }
 
 export async function getReportData(filters: ReportFilters): Promise<ReportResult> {
@@ -66,12 +82,8 @@ export async function getReportData(filters: ReportFilters): Promise<ReportResul
   if (filters.source) convQuery.source = filters.source;
   if (filters.from || filters.to) {
     convQuery.periodStart = {};
-    if (filters.from) (convQuery.periodStart as Record<string, Date>).$gte = new Date(filters.from);
-    if (filters.to) {
-      const end = new Date(filters.to);
-      end.setHours(23, 59, 59, 999);
-      (convQuery.periodStart as Record<string, Date>).$lte = end;
-    }
+    if (filters.from) (convQuery.periodStart as Record<string, Date>).$gte = parseFilterDate(filters.from);
+    if (filters.to) (convQuery.periodStart as Record<string, Date>).$lte = parseFilterDate(filters.to, true);
   }
 
   const [allSites, publishers, offers] = await Promise.all([
@@ -80,7 +92,6 @@ export async function getReportData(filters: ReportFilters): Promise<ReportResul
     Offer.find().lean(),
   ]);
 
-  // Scope by publisher → restrict to that publisher's sites
   let scopedSiteIds: string[] | null = null;
   if (filters.publisherId) {
     scopedSiteIds = allSites
@@ -93,10 +104,26 @@ export async function getReportData(filters: ReportFilters): Promise<ReportResul
 
   const conversions = await Conversion.find(convQuery).lean();
 
-  // Clicks aggregated by site (via tracking links)
   const links = await TrackingLink.find().lean();
   const linkToSite = new Map(links.map((l) => [String(l._id), String(l.siteId)]));
+  const linkIds = scopedSiteIds
+    ? links.filter((l) => scopedSiteIds!.includes(String(l.siteId))).map((l) => l._id)
+    : links.map((l) => l._id);
+
+  const clickMatch: FilterQuery<Record<string, unknown>> = {
+    trackingLinkId: { $in: linkIds },
+  };
+  const clickedAt = clickDateRange(filters);
+  if (clickedAt) clickMatch.clickedAt = clickedAt;
+  if (filters.siteId) {
+    const siteLinkIds = links
+      .filter((l) => String(l.siteId) === filters.siteId)
+      .map((l) => l._id);
+    clickMatch.trackingLinkId = { $in: siteLinkIds };
+  }
+
   const clickAgg = await Click.aggregate([
+    { $match: clickMatch },
     { $group: { _id: "$trackingLinkId", count: { $sum: 1 } } },
   ]);
   const clicksBySite = new Map<string, number>();
@@ -105,29 +132,30 @@ export async function getReportData(filters: ReportFilters): Promise<ReportResul
     if (siteId) clicksBySite.set(siteId, (clicksBySite.get(siteId) || 0) + c.count);
   }
 
+  const totalScopedClicks = [...clicksBySite.entries()]
+    .filter(([siteId]) => {
+      if (filters.siteId) return siteId === filters.siteId;
+      if (scopedSiteIds) return scopedSiteIds.includes(siteId);
+      return true;
+    })
+    .reduce((sum, [, count]) => sum + count, 0);
+
   const siteById = new Map(allSites.map((s) => [String(s._id), s]));
   const pubById = new Map(publishers.map((p) => [String(p._id), p]));
-  const offerName = filters.offerId
-    ? offers.find((o) => String(o._id) === filters.offerId)?.name
-    : undefined;
 
-  // Group conversions by site (and a bucket for unmatched siteId=null)
   interface SiteAgg {
     siteId: string | null;
     publisherId: string | null;
-    promoCodes: Set<string>;
-    sources: Set<string>;
+    installs: number;
     signups: number;
     depositors: number;
     traders: number;
     qualified: number;
-    cpaSum: number;
-    cpaCount: number;
     totalCost: number;
   }
 
   const bySite = new Map<string, SiteAgg>();
-  const timeSeriesMap = new Map<string, number>(); // key date|siteId
+  const timeSeriesMap = new Map<string, number>();
 
   for (const c of conversions) {
     const siteId = c.siteId ? String(c.siteId) : null;
@@ -138,54 +166,46 @@ export async function getReportData(filters: ReportFilters): Promise<ReportResul
       bySite.set(key, {
         siteId,
         publisherId,
-        promoCodes: new Set(),
-        sources: new Set(),
+        installs: 0,
         signups: 0,
         depositors: 0,
         traders: 0,
         qualified: 0,
-        cpaSum: 0,
-        cpaCount: 0,
         totalCost: 0,
       });
     }
     const agg = bySite.get(key)!;
-    if (c.promoCode) agg.promoCodes.add(c.promoCode);
-    agg.sources.add(c.source);
-    agg.signups += c.signups || 0;
+
+    if (c.source === ConversionSource.APPSFLYER) {
+      agg.installs += c.signups || 0;
+    } else {
+      agg.signups += c.signups || 0;
+    }
     agg.depositors += c.depositors || 0;
     agg.traders += c.traders || 0;
     agg.qualified += c.qualified || 0;
-    if (c.cpaPayout) {
-      agg.cpaSum += c.cpaPayout;
-      agg.cpaCount += 1;
-    }
     agg.totalCost += c.totalCost || 0;
 
     if (siteId && c.periodStart) {
       const date = new Date(c.periodStart).toISOString().slice(0, 10);
       const tkey = `${date}|${siteId}`;
-      const convCount = (c.qualified || 0) + (c.depositors || 0) + (c.signups || 0);
-      timeSeriesMap.set(tkey, (timeSeriesMap.get(tkey) || 0) + convCount);
+      timeSeriesMap.set(tkey, (timeSeriesMap.get(tkey) || 0) + (c.qualified || 0));
     }
   }
 
-  // Order by publisher then site name; group rows with subtotals
   const rows: ReportRow[] = [];
-  const revenueByPublisher = new Map<string, number>();
+  const revenueBySite = new Map<string, number>();
 
-  // Build per-publisher buckets
   const publisherOrder = [...pubById.values()].sort((a, b) => a.name.localeCompare(b.name));
 
   let grand = {
     clicks: 0,
+    installs: 0,
     signups: 0,
     depositors: 0,
     traders: 0,
     qualified: 0,
     totalCost: 0,
-    cpaSum: 0,
-    cpaCount: 0,
   };
 
   const emitSiteRow = (agg: SiteAgg) => {
@@ -200,26 +220,22 @@ export async function getReportData(filters: ReportFilters): Promise<ReportResul
       siteId: agg.siteId,
       siteName: site?.name ?? null,
       siteColor: site?.colorAccent ?? "#9CA3AF",
-      promoCode: [...agg.promoCodes].join(", ") || null,
       clicks,
+      installs: agg.installs,
       signups: agg.signups,
       depositors: agg.depositors,
-      signupToDepPct: pctOrNull(agg.depositors, agg.signups),
       traders: agg.traders,
       qualified: agg.qualified,
-      signupToQualPct: pctOrNull(agg.qualified, agg.signups),
-      cpa: agg.cpaCount ? +(agg.cpaSum / agg.cpaCount).toFixed(2) : 0,
       totalCost: agg.totalCost,
-      source: [...agg.sources].join(", ") || null,
     });
+    if (agg.siteId) revenueBySite.set(agg.siteId, agg.totalCost);
     grand.clicks += clicks;
+    grand.installs += agg.installs;
     grand.signups += agg.signups;
     grand.depositors += agg.depositors;
     grand.traders += agg.traders;
     grand.qualified += agg.qualified;
     grand.totalCost += agg.totalCost;
-    grand.cpaSum += agg.cpaSum;
-    grand.cpaCount += agg.cpaCount;
   };
 
   for (const pub of publisherOrder) {
@@ -235,27 +251,24 @@ export async function getReportData(filters: ReportFilters): Promise<ReportResul
 
     const sub = {
       clicks: 0,
+      installs: 0,
       signups: 0,
       depositors: 0,
       traders: 0,
       qualified: 0,
       totalCost: 0,
-      cpaSum: 0,
-      cpaCount: 0,
     };
     for (const agg of siteAggs) {
       emitSiteRow(agg);
       const clicks = agg.siteId ? clicksBySite.get(agg.siteId) || 0 : 0;
       sub.clicks += clicks;
+      sub.installs += agg.installs;
       sub.signups += agg.signups;
       sub.depositors += agg.depositors;
       sub.traders += agg.traders;
       sub.qualified += agg.qualified;
       sub.totalCost += agg.totalCost;
-      sub.cpaSum += agg.cpaSum;
-      sub.cpaCount += agg.cpaCount;
     }
-    revenueByPublisher.set(pubId, sub.totalCost);
 
     rows.push({
       type: "publisherSubtotal",
@@ -265,25 +278,20 @@ export async function getReportData(filters: ReportFilters): Promise<ReportResul
       siteId: null,
       siteName: null,
       siteColor: null,
-      promoCode: null,
       clicks: sub.clicks,
+      installs: sub.installs,
       signups: sub.signups,
       depositors: sub.depositors,
-      signupToDepPct: pctOrNull(sub.depositors, sub.signups),
       traders: sub.traders,
       qualified: sub.qualified,
-      signupToQualPct: pctOrNull(sub.qualified, sub.signups),
-      cpa: sub.cpaCount ? +(sub.cpaSum / sub.cpaCount).toFixed(2) : 0,
       totalCost: sub.totalCost,
-      source: null,
     });
   }
 
-  // Unmatched bucket (siteId null, no publisher)
   const unmatched = bySite.get("__unmatched__");
-  if (unmatched && (!filters.publisherId)) {
+  if (unmatched && !filters.publisherId) {
     emitSiteRow(unmatched);
-    revenueByPublisher.set("__unmatched__", unmatched.totalCost);
+    revenueBySite.set("__unmatched__", unmatched.totalCost);
   }
 
   rows.push({
@@ -294,20 +302,14 @@ export async function getReportData(filters: ReportFilters): Promise<ReportResul
     siteId: null,
     siteName: null,
     siteColor: null,
-    promoCode: null,
-    clicks: grand.clicks,
+    clicks: totalScopedClicks,
+    installs: grand.installs,
     signups: grand.signups,
     depositors: grand.depositors,
-    signupToDepPct: pctOrNull(grand.depositors, grand.signups),
     traders: grand.traders,
     qualified: grand.qualified,
-    signupToQualPct: pctOrNull(grand.qualified, grand.signups),
-    cpa: grand.cpaCount ? +(grand.cpaSum / grand.cpaCount).toFixed(2) : 0,
     totalCost: grand.totalCost,
-    source: null,
   });
-
-  const totalConversions = grand.qualified + grand.depositors;
 
   const timeSeries = [...timeSeriesMap.entries()]
     .map(([key, conversions]) => {
@@ -323,25 +325,28 @@ export async function getReportData(filters: ReportFilters): Promise<ReportResul
     })
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  const revenueByPublisherArr = [...revenueByPublisher.entries()]
+  const revenueBySiteArr = [...revenueBySite.entries()]
     .filter(([id]) => id !== "__unmatched__")
-    .map(([id, revenue]) => ({
-      publisherId: id,
-      name: pubById.get(id)?.name ?? "Unknown",
-      revenue,
-    }))
+    .map(([id, revenue]) => {
+      const site = siteById.get(id);
+      return {
+        siteId: id,
+        name: site?.name ?? "Unknown",
+        color: site?.colorAccent ?? "#9CA3AF",
+        revenue,
+      };
+    })
     .sort((a, b) => b.revenue - a.revenue);
 
   return {
     rows,
     kpis: {
-      totalClicks: grand.clicks,
-      totalInstalls: grand.signups,
-      totalConversions,
+      totalClicks: totalScopedClicks,
+      totalQualified: grand.qualified,
+      conversionRate: conversionRateKpi(grand.qualified, totalScopedClicks),
       totalRevenue: grand.totalCost,
-      avgCpa: grand.cpaCount ? +(grand.cpaSum / grand.cpaCount).toFixed(2) : 0,
     },
     timeSeries,
-    revenueByPublisher: revenueByPublisherArr,
+    revenueBySite: revenueBySiteArr,
   };
 }
